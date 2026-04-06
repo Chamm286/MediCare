@@ -1,0 +1,6 @@
+﻿{
+  "prescriptions": [
+    { "id": "P001", "appointmentId": "A001", "patientId": "USR001", "doctorId": "D001", "diagnosis": "Tăng huyết áp", "medicines": [{"medicineId": "M001", "quantity": 10, "dosage": "1 viên/lần", "frequency": "2 lần/ngày", "days": 5}], "note": "Tái khám sau 5 ngày", "createdAt": 1734567890000 },
+    { "id": "P002", "appointmentId": "A002", "patientId": "USR001", "doctorId": "D002", "diagnosis": "Cảm cúm cấp", "medicines": [{"medicineId": "M002", "quantity": 6, "dosage": "1 viên/lần", "frequency": "3 lần/ngày", "days": 2}, {"medicineId": "M003", "quantity": 4, "dosage": "1 gói/lần", "frequency": "Khi cần", "days": 2}], "note": "Uống nhiều nước, nghỉ ngơi", "createdAt": 1734654290000 }
+  ]
+}

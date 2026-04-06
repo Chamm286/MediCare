@@ -1,0 +1,7 @@
+﻿{
+  "news": [
+    { "id": "N001", "title": "Cảnh báo sốt xuất huyết mùa mưa", "content": "Bộ Y tế khuyến cáo người dân phòng chống sốt xuất huyết...", "image": "https://example.com/news1.jpg", "date": "15/04/2025", "views": 1234 },
+    { "id": "N002", "title": "Tiêm vaccine COVID-19 mũi nhắc lại", "content": "Người dân nên tiêm nhắc lại vaccine COVID-19...", "image": "https://example.com/news2.jpg", "date": "14/04/2025", "views": 2345 },
+    { "id": "N003", "title": "Phòng chống bệnh tay chân miệng", "content": "Các biện pháp phòng chống bệnh tay chân miệng cho trẻ...", "image": "https://example.com/news3.jpg", "date": "13/04/2025", "views": 3456 }
+  ]
+}

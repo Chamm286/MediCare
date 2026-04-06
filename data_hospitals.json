@@ -1,0 +1,11 @@
+﻿{
+  "hospitals": [
+    { "id": "H001", "name": "BV Chợ Rẫy", "address": "Quận 5, TP.HCM", "phone": "02838554137", "lat": 10.7628, "lng": 106.6811, "rating": 4.8 },
+    { "id": "H002", "name": "BV Bạch Mai", "address": "Quận Đống Đa, Hà Nội", "phone": "02438693731", "lat": 21.0081, "lng": 105.8322, "rating": 4.7 },
+    { "id": "H003", "name": "BV Nhi Đồng 1", "address": "Quận 10, TP.HCM", "phone": "02838551122", "lat": 10.7678, "lng": 106.6789, "rating": 4.6 },
+    { "id": "H004", "name": "BV Từ Dũ", "address": "Quận 1, TP.HCM", "phone": "02838391313", "lat": 10.7743, "lng": 106.6982, "rating": 4.9 },
+    { "id": "H005", "name": "PK Hoàn Mỹ", "address": "Quận 10, TP.HCM", "phone": "02838656111", "lat": 10.7691, "lng": 106.6811, "rating": 4.5 },
+    { "id": "H006", "name": "BV Đa khoa Tâm Anh", "address": "Quận 7, TP.HCM", "phone": "02837446666", "lat": 10.7393, "lng": 106.7183, "rating": 4.9 },
+    { "id": "H007", "name": "BV Vinmec Times City", "address": "Quận Hai Bà Trưng, Hà Nội", "phone": "02439743566", "lat": 21.0032, "lng": 105.8637, "rating": 5.0 }
+  ]
+}

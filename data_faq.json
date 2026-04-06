@@ -1,0 +1,8 @@
+﻿{
+  "faq": [
+    { "id": "F001", "question": "Đặt lịch khám như thế nào?", "answer": "Bạn có thể đặt lịch trực tiếp trên app bằng cách chọn bác sĩ, chọn ngày giờ và xác nhận đặt lịch." },
+    { "id": "F002", "question": "Chi phí khám bệnh bao nhiêu?", "answer": "Chi phí tùy theo bác sĩ và dịch vụ, dao động từ 200.000đ đến 800.000đ." },
+    { "id": "F003", "question": "Có thể hủy lịch hẹn không?", "answer": "Có, bạn có thể hủy lịch hẹn trước 2 giờ so với giờ khám." },
+    { "id": "F004", "question": "Tư vấn online có hiệu quả không?", "answer": "Tư vấn online rất hiệu quả cho các bệnh thông thường và theo dõi điều trị." }
+  ]
+}

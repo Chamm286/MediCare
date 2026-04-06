@@ -1,0 +1,8 @@
+﻿{
+  "appointments": [
+    { "id": "A001", "patientId": "USR001", "doctorId": "D001", "doctorName": "Trần Thị Binh", "specialtyId": "SP001", "hospitalId": "H001", "date": "21/04/2025", "timeSlot": "09:30", "symptoms": "Đau ngực, khó thở", "status": "confirmed", "type": "offline", "createdAt": 1734567890000 },
+    { "id": "A002", "patientId": "USR001", "doctorId": "D002", "doctorName": "Lê Văn Cường", "specialtyId": "SP002", "hospitalId": "H005", "date": "22/04/2025", "timeSlot": "14:00", "symptoms": "Sốt, ho, mệt mỏi", "status": "pending", "type": "online", "createdAt": 1734654290000 },
+    { "id": "A003", "patientId": "USR002", "doctorId": "D003", "doctorName": "Nguyễn Thị Ngọc Dung", "specialtyId": "SP003", "hospitalId": "H003", "date": "23/04/2025", "timeSlot": "10:00", "symptoms": "Trẻ sốt cao, quấy khóc", "status": "confirmed", "type": "offline", "createdAt": 1734740690000 },
+    { "id": "A004", "patientId": "USR003", "doctorId": "D001", "doctorName": "Trần Thị Binh", "specialtyId": "SP001", "hospitalId": "H001", "date": "24/04/2025", "timeSlot": "15:30", "symptoms": "Huyết áp cao, chóng mặt", "status": "completed", "type": "online", "createdAt": 1734827090000 }
+  ]
+}

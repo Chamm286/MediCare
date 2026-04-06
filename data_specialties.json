@@ -1,0 +1,14 @@
+﻿{
+  "specialties": [
+    { "id": "SP001", "name": "Tim mạch", "icon": "❤️", "color": "#E53935", "description": "Khám và điều trị các bệnh về tim mạch, huyết áp, mỡ máu" },
+    { "id": "SP002", "name": "Nội tổng quát", "icon": "🏥", "color": "#0D47A1", "description": "Khám bệnh tổng quát, nội khoa, cấp cứu" },
+    { "id": "SP003", "name": "Nhi khoa", "icon": "👶", "color": "#43A047", "description": "Khám và điều trị bệnh cho trẻ em, tiêm chủng" },
+    { "id": "SP004", "name": "Sản phụ khoa", "icon": "🤰", "color": "#EC407A", "description": "Khám thai, phụ khoa, hỗ trợ sinh sản" },
+    { "id": "SP005", "name": "Răng hàm mặt", "icon": "🦷", "color": "#8D6E63", "description": "Khám răng miệng, niềng răng, nhổ răng, trám răng" },
+    { "id": "SP006", "name": "Da liễu", "icon": "💆", "color": "#7B1FA2", "description": "Khám và điều trị các bệnh về da, thẩm mỹ da" },
+    { "id": "SP007", "name": "Mắt", "icon": "👁️", "color": "#1E88E5", "description": "Khám mắt, cận thị, đục thủy tinh thể" },
+    { "id": "SP008", "name": "Tai - Mũi - Họng", "icon": "👂", "color": "#00897B", "description": "Khám và điều trị bệnh tai, mũi, họng" },
+    { "id": "SP009", "name": "Thần kinh", "icon": "🧠", "color": "#5E35B1", "description": "Khám và điều trị bệnh thần kinh, đau đầu, động kinh" },
+    { "id": "SP010", "name": "Cơ xương khớp", "icon": "🦴", "color": "#FF6D00", "description": "Khám và điều trị bệnh xương khớp, thoái hóa" }
+  ]
+}

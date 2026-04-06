@@ -1,0 +1,90 @@
+﻿## 🚀 Cài đặt và chạy dự án
+
+### Yêu cầu hệ thống
+- Android Studio Hedgehog | 2023.1.1 trở lên
+- JDK 11 hoặc cao hơn
+- Android SDK API 24+
+- Thiết bị Android (thực hoặc ảo) chạy Android 7.0+
+
+### Các bước cài đặt
+
+1. **Clone repository**
+`ash
+git clone https://github.com/Chamm286/MediCare.git
+
+Mở project bằng Android Studio
+
+File → Open → Chọn thư mục MediCare
+
+Kết nối Firebase
+
+Tạo project trên Firebase Console
+
+Thêm ứng dụng Android với package name com.example.medicare
+
+Download file google-services.json
+
+Đặt vào thư mục app/
+
+Build và chạy
+
+Kết nối thiết bị Android hoặc tạo emulator
+
+Nhấn nút Run ▶️ hoặc Shift + F10
+# Build debug APK
+./gradlew assembleDebug
+
+# Build release APK (cần keystore)
+./gradlew assembleRelease
+📞 Liên hệ
+Thành viênVai tròEmailSĐT
+Nguyễn Thị Bích TrâmSinh viên thực hiệntramntb.24it@vku.udn.vn0934984665
+Trần Viết ĐạtSinh viên thực hiệndattv.24it@vku.udn.vn0396704484
+ThS. Nguyễn Đỗ Công PhápGiảng viên hướng dẫn--
+📄 Giấy phép
+Dự án này được phân phối dưới giấy phép MIT License.
+
+<div align="center"> <b>⭐ Đừng quên để lại sao nếu bạn thấy dự án hữu ích! ⭐</b> <br> <br> <i>&copy; 2026 MediCare - Giải pháp y tế số toàn diện cho người dùng Việt Nam</i> </div> "@ | Out-File -FilePath README.md -Append -Encoding UTF8 `
+@"
+# Built application files
+*.apk
+*.aar
+*.aab
+*.ap_
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+release/
+
+# Gradle files
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+local.properties
+*.iml
+*.hprof
+
+# Android Studio
+.idea/
+.cxx/
+.navigation/
+captures/
+.externalNativeBuild/
+.DS_Store
+
+# Keystore files
+*.jks
+*.keystore
+
+# Firebase
+google-services.json
+
+# Logs
+*.log

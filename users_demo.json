@@ -1,0 +1,40 @@
+﻿{
+  "users": [
+    {
+      "email": "nam@gmail.com",
+      "password": "123456",
+      "displayName": "Nguyễn Văn Nam",
+      "phone": "0901234567"
+    },
+    {
+      "email": "minh@gmail.com",
+      "password": "123456",
+      "displayName": "Nguyễn Thanh Minh",
+      "phone": "0903123456"
+    },
+    {
+      "email": "thang@gmail.com",
+      "password": "123456",
+      "displayName": "Trần Văn Thắng",
+      "phone": "0903123457"
+    },
+    {
+      "email": "huong@gmail.com",
+      "password": "123456",
+      "displayName": "Nguyễn Thị Hương",
+      "phone": "0903123458"
+    },
+    {
+      "email": "tuan@gmail.com",
+      "password": "123456",
+      "displayName": "Lê Hoàng Tuấn",
+      "phone": "0903123459"
+    },
+    {
+      "email": "lan@gmail.com",
+      "password": "123456",
+      "displayName": "Phạm Thị Lan",
+      "phone": "0903123460"
+    }
+  ]
+}
