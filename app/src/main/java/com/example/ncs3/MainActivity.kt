@@ -2,38 +2,72 @@
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.example.ncs3.utils.SharedPrefs
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
+import com.example.ncs3.ui.screens.admin.ManageDoctorsScreen
 import androidx.navigation.compose.composable
+import com.example.ncs3.ui.screens.doctor.DoctorDashboardScreen
+import com.example.ncs3.ui.screens.doctor.DoctorProfileScreen
+import com.example.ncs3.ui.screens.doctor.DoctorScheduleScreen
+import com.example.ncs3.ui.screens.doctor.DoctorAppointmentsScreen
+import com.example.ncs3.ui.screens.doctor.MyPatientsScreen
+import com.example.ncs3.ui.screens.doctor.PatientHistoryScreen
+import com.example.ncs3.ui.screens.doctor.DoctorStatsScreen
+import com.example.ncs3.ui.screens.doctor.ChatScreen
+import com.example.ncs3.ui.screens.doctor.DoctorDetailScreen
+import com.example.ncs3.ui.screens.doctor.DoctorScreen
 import androidx.navigation.compose.rememberNavController
-import com.example.ncs3.ui.screens.auth.ForgotPasswordScreen
+import com.example.ncs3.utils.RegistrationData
+import com.example.ncs3.ui.screens.dashboard.DashboardScreen
 import com.example.ncs3.ui.screens.auth.LoginScreen
 import com.example.ncs3.ui.screens.auth.RegisterScreen
-import com.example.ncs3.ui.screens.dashboard.DashboardScreen
-import com.example.ncs3.ui.screens.onboarding.OnboardingScreen
+import com.example.ncs3.ui.screens.auth.RoleSelectScreen
+import com.example.ncs3.ui.screens.auth.ForgotPasswordScreen
+import com.example.ncs3.ui.screens.appointment.AppointmentScreen
+import com.example.ncs3.ui.screens.appointment.AppointmentDetailScreen
+import com.example.ncs3.ui.screens.profile.ProfileScreen
+import com.example.ncs3.ui.screens.booking.BookingScreen
+import com.example.ncs3.ui.screens.specialty.SpecialtyListScreen
+import com.example.ncs3.ui.screens.specialty.SpecialtyDetailScreen
+import com.example.ncs3.ui.screens.medicine.MedicineStoreScreen
+import com.example.ncs3.ui.screens.medicine.MedicineScreen
+import com.example.ncs3.ui.screens.medicine.CheckoutScreen
+import com.example.ncs3.ui.screens.map.MapScreen
+import com.example.ncs3.ui.screens.notification.NotificationScreen
+import com.example.ncs3.ui.screens.settings.SettingsScreen
+import com.example.ncs3.ui.screens.history.HistoryScreen
+import com.example.ncs3.ui.screens.search.SearchScreen
+import com.example.ncs3.ui.screens.chatbot.AIChatbotScreen
+import com.example.ncs3.ui.screens.review.ReviewScreen
+import com.example.ncs3.ui.screens.rating.RatingScreen
+import com.example.ncs3.ui.screens.account.AccountScreen
 import com.example.ncs3.ui.screens.splash.SplashScreen
+import com.example.ncs3.ui.screens.onboarding.OnboardingScreen
+import com.example.ncs3.ui.screens.admin.AdminDashboardScreen
+import com.example.ncs3.ui.screens.admin.ManagePatientsScreen
+import com.example.ncs3.ui.screens.admin.ReportsScreen
+import com.example.ncs3.ui.screens.admin.AdminSettingsScreen
+import com.example.ncs3.ui.screens.scan.ScanScreen
+import com.example.ncs3.data.repository.MedicareRepository
 import com.example.ncs3.ui.theme.MediCareTheme
-
-sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
-    object Onboarding : Screen("onboarding")
-    object Dashboard : Screen("dashboard")
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object ForgotPassword : Screen("forgot_password")
-}
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MediCareTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    MedicareNavigation()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppNavigation()
                 }
             }
         }
@@ -41,42 +75,372 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MedicareNavigation() {
+fun AppNavigation() {
     val navController = rememberNavController()
+
     var isLoggedIn by remember { mutableStateOf(false) }
+    var userId by remember { mutableStateOf("") }
+    var userRole by remember { mutableStateOf("patient") }
+    var hasSeenOnboarding by remember { mutableStateOf(false) } // Đã xem onboarding chưa
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route
+        startDestination = "splash"  // Luôn bắt đầu bằng Splash
     ) {
-        composable(Screen.Splash.route) {
-            SplashScreen(navController)
+        // Splash Screen - Luôn chạy đầu tiên
+        composable("splash") {
+            SplashScreen(
+                onTimeout = {
+                    if (hasSeenOnboarding) {
+                        // Đã xem onboarding rồi, chuyển sang login
+                        navController.navigate("login") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    } else {
+                        // Chưa xem onboarding, chuyển sang onboarding
+                        navController.navigate("onboarding") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                }
+            )
         }
-        composable(Screen.Onboarding.route) {
-            OnboardingScreen(navController) {
-                navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(Screen.Onboarding.route) { inclusive = true }
+
+        // Onboarding - Chạy sau Splash nếu chưa xem
+        composable("onboarding") {
+            OnboardingScreen(
+                onGetStarted = {
+                    hasSeenOnboarding = true
+                    navController.navigate("login") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // ========== AUTH SCREENS ==========
+        composable("login") {
+            LoginScreen(
+                navController = navController,
+                onLoginSuccess = { uid ->
+                    isLoggedIn = true
+                    userId = uid
+
+                    // Lấy role từ SharedPrefs (đã được lưu trong LoginScreen)
+                    val userRole = SharedPrefs.getUserRole()
+
+                    // Điều hướng theo role
+                    when (userRole) {
+                        "admin" -> {
+                            navController.navigate("admin_dashboard") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+
+                        "doctor" -> {
+                            navController.navigate("doctor_dashboard") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+
+                        else -> {
+                            navController.navigate("dashboard") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    }
+                }
+            )
+        }
+        // ========== AUTH SCREENS ==========
+        composable("register") {
+            RegisterScreen(
+                navController = navController,
+                onRegistrationData = { email, password, fullName, phone ->
+                    // Lưu dữ liệu tạm thời
+                    RegistrationData.email = email
+                    RegistrationData.password = password
+                    RegistrationData.fullName = fullName
+                    RegistrationData.phone = phone
+                    navController.navigate("role_select")
+                }
+            )
+        }
+
+        composable("role_select") {
+            RoleSelectScreen(
+                navController = navController
+                // Không cần truyền arguments nữa
+            )
+        }
+
+        composable("forgot_password") {
+            ForgotPasswordScreen(navController = navController)
+        }
+
+        // ========== PATIENT SCREENS ==========
+        composable("dashboard") {
+            DashboardScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                userId = userId,
+                userRole = userRole,
+                onLogout = {
+                    isLoggedIn = false
+                    userId = ""
+                    userRole = "patient"
+                    navController.navigate("login") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("appointments") {
+            AppointmentScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                userId = userId
+            )
+        }
+
+        composable("profile") {
+            ProfileScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                userId = userId
+            )
+        }
+
+        composable("booking") {
+            BookingScreen(
+                navController = navController,
+                doctorId = null,
+                userId = userId
+            )
+        }
+
+        composable("booking/{doctorId}") { backStackEntry ->
+            val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+            BookingScreen(
+                navController = navController,
+                userId = userId,
+                doctorId = doctorId
+            )
+        }
+
+        composable("doctors") {
+            DoctorScreen(navController = navController)
+        }
+
+        composable("doctor_detail/{doctorId}") { backStackEntry ->
+            val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+            DoctorDetailScreen(
+                navController = navController,
+                doctorId = doctorId,
+                userId = userId
+            )
+        }
+
+        composable("specialties") {
+            SpecialtyListScreen(navController = navController)
+        }
+
+        composable("specialty_detail/{specialtyId}") { backStackEntry ->
+            val specialtyId = backStackEntry.arguments?.getString("specialtyId") ?: ""
+            SpecialtyDetailScreen(
+                navController = navController,
+                specialtyId = specialtyId,
+                isLoggedIn = isLoggedIn,
+                userId = userId
+            )
+        }
+
+        composable("search") {
+            SearchScreen(navController = navController)
+        }
+
+        composable("notification") {
+            NotificationScreen(navController = navController)
+        }
+
+        composable("settings") {
+            SettingsScreen(navController = navController)
+        }
+
+        composable("history") {
+            HistoryScreen(navController = navController)
+        }
+
+        composable("appointment_detail/{appointmentId}") { backStackEntry ->
+            val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
+            AppointmentDetailScreen(
+                navController = navController,
+                appointmentId = appointmentId
+            )
+        }
+
+        composable("account") {
+            AccountScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                onLogout = {
+                    isLoggedIn = false
+                    userId = ""
+                    userRole = "patient"
+                    navController.navigate("login") {
+                        popUpTo("account") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // ========== MEDICINE SCREENS ==========
+        composable("medicine_store") {
+            MedicineStoreScreen(
+                navController = navController,
+                userId = userId
+            )
+        }
+
+        composable("medicine") {
+            MedicineScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                userId = userId
+            )
+        }
+
+        // ========== MAP SCREEN ==========
+        composable("map") {
+            MapScreen(navController = navController)
+        }
+
+        // ========== AI CHATBOT ==========
+        composable("ai_chatbot") {
+            AIChatbotScreen(navController = navController)
+        }
+
+        // ========== REVIEW & RATING ==========
+        composable("review") {
+            ReviewScreen(
+                navController = navController,
+                userId = userId,
+                userName = ""
+            )
+        }
+
+        composable("rating/{doctorId}/{doctorName}/{patientId}") { backStackEntry ->
+            val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+            val doctorName = backStackEntry.arguments?.getString("doctorName") ?: ""
+            RatingScreen(
+                navController = navController,
+                doctorId = doctorId,
+                doctorName = doctorName,
+                patientId = userId
+            )
+        }
+
+        // ========== CHECKOUT ==========
+        composable("checkout") {
+            CheckoutScreen(
+                navController = navController,
+                userId = userId
+            )
+        }
+
+        // ========== DOCTOR SCREENS ==========
+        composable("doctor_dashboard") {
+            val scope = rememberCoroutineScope()
+            val repository = remember { MedicareRepository() }
+            var doctorName by remember { mutableStateOf("") }
+
+            LaunchedEffect(userId) {
+                scope.launch {
+                    val doctor = repository.getDoctorById(userId)
+                    doctorName = doctor?.name ?: "Bác sĩ"
                 }
             }
+
+            DoctorDashboardScreen(
+                navController = navController,
+                doctorId = userId,
+                doctorName = doctorName  // ← THÊM tham số này
+            )
         }
-        composable(Screen.Dashboard.route) {
-            DashboardScreen(navController) {
-                navController.navigate(Screen.Login.route)
-            }
+
+        composable("doctor_profile") {
+            DoctorProfileScreen(
+                navController = navController,
+                doctorId = userId
+            )
         }
-        composable(Screen.Login.route) {
-            LoginScreen(navController) {
-                isLoggedIn = true
-                navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(Screen.Dashboard.route) { inclusive = true }
-                }
-            }
+
+        composable("doctor_schedule") {
+            DoctorScheduleScreen(
+                navController = navController,
+                doctorId = userId
+            )
         }
-        composable(Screen.Register.route) {
-            RegisterScreen(navController)
+
+        composable("doctor_appointments") {
+            DoctorAppointmentsScreen(
+                navController = navController,
+                doctorId = userId
+            )
         }
-        composable(Screen.ForgotPassword.route) {
-            ForgotPasswordScreen(navController)
+
+        composable("my_patients") {
+            MyPatientsScreen(
+                navController = navController,
+                doctorId = userId
+            )
+        }
+
+        composable("patient_history/{patientId}") { backStackEntry ->
+            val patientId = backStackEntry.arguments?.getString("patientId") ?: ""
+            PatientHistoryScreen(
+                navController = navController,
+                patientId = patientId,
+                doctorId = userId
+            )
+        }
+
+        composable("doctor_stats") {
+            DoctorStatsScreen(
+                navController = navController,
+                doctorId = userId
+            )
+        }
+
+        composable("chat/{patientId}") { backStackEntry ->
+            val patientId = backStackEntry.arguments?.getString("patientId") ?: ""
+            ChatScreen(
+                navController = navController,
+                doctorId = userId,
+                patientId = patientId
+            )
+        }
+
+        // ========== ADMIN SCREENS ==========
+        composable("admin_dashboard") {
+            AdminDashboardScreen(navController = navController)
+        }
+
+        composable("manage_doctors") {
+            ManageDoctorsScreen(navController = navController)
+        }
+
+        composable("manage_patients") {
+            ManagePatientsScreen(navController = navController)
+        }
+
+        composable("reports") {
+            ReportsScreen(navController = navController)
+        }
+
+        composable("admin_settings") {
+            AdminSettingsScreen(navController = navController)
         }
     }
 }

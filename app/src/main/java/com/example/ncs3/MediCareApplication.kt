@@ -1,12 +1,11 @@
-﻿package com.example.ncs3
+package com.example.ncs3
 
 import android.app.Application
-import com.google.firebase.FirebaseApp
+import com.example.ncs3.utils.SharedPrefs
 
 class MediCareApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        // Khởi tạo Firebase
-        FirebaseApp.initializeApp(this)
+        SharedPrefs.init(this)
     }
 }
