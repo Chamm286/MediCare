@@ -17,6 +17,7 @@
     <!-- ========== QUYỀN CAMERA & MIC ========== -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!-- ========== CHO PHÉP THIẾT BỊ KHÔNG GPS VẪN CHẠY ========== -->
     <uses-feature
@@ -52,7 +53,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:largeHeap="true"
-            android:theme="@style/AppTheme">
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

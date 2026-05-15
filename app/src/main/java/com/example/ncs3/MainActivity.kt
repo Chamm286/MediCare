@@ -4,11 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import com.example.ncs3.utils.SharedPrefs
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import com.example.ncs3.ui.screens.admin.ManageDoctorsScreen
 import androidx.navigation.compose.composable
@@ -58,11 +61,27 @@ import com.example.ncs3.data.repository.MedicareRepository
 import com.example.ncs3.ui.theme.MediCareTheme
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MediCareTheme {
+            // Tạo color scheme sáng tùy chỉnh
+            val lightScheme = lightColorScheme(
+                primary = Color(0xFF0D47A1),
+                secondary = Color(0xFF00BCD4),
+                tertiary = Color(0xFFFF6B4A),
+                background = Color(0xFFF5F7FA),
+                surface = Color.White,
+                onPrimary = Color.White,
+                onSecondary = Color.White,
+                onBackground = Color(0xFF1A2C3E),
+                onSurface = Color(0xFF1A2C3E)
+            )
+
+            MaterialTheme(
+                colorScheme = lightScheme,
+                typography = MaterialTheme.typography
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -81,23 +100,21 @@ fun AppNavigation() {
     var isLoggedIn by remember { mutableStateOf(false) }
     var userId by remember { mutableStateOf("") }
     var userRole by remember { mutableStateOf("patient") }
-    var hasSeenOnboarding by remember { mutableStateOf(false) } // Đã xem onboarding chưa
+    var hasSeenOnboarding by remember { mutableStateOf(false) }
 
     NavHost(
         navController = navController,
-        startDestination = "splash"  // Luôn bắt đầu bằng Splash
+        startDestination = "splash"
     ) {
-        // Splash Screen - Luôn chạy đầu tiên
+        // Splash Screen
         composable("splash") {
             SplashScreen(
                 onTimeout = {
                     if (hasSeenOnboarding) {
-                        // Đã xem onboarding rồi, chuyển sang login
                         navController.navigate("login") {
                             popUpTo("splash") { inclusive = true }
                         }
                     } else {
-                        // Chưa xem onboarding, chuyển sang onboarding
                         navController.navigate("onboarding") {
                             popUpTo("splash") { inclusive = true }
                         }
@@ -106,7 +123,7 @@ fun AppNavigation() {
             )
         }
 
-        // Onboarding - Chạy sau Splash nếu chưa xem
+        // Onboarding
         composable("onboarding") {
             OnboardingScreen(
                 onGetStarted = {
@@ -125,24 +142,18 @@ fun AppNavigation() {
                 onLoginSuccess = { uid ->
                     isLoggedIn = true
                     userId = uid
-
-                    // Lấy role từ SharedPrefs (đã được lưu trong LoginScreen)
-                    val userRole = SharedPrefs.getUserRole()
-
-                    // Điều hướng theo role
-                    when (userRole) {
+                    val role = SharedPrefs.getUserRole()
+                    when (role) {
                         "admin" -> {
                             navController.navigate("admin_dashboard") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
-
                         "doctor" -> {
                             navController.navigate("doctor_dashboard") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
-
                         else -> {
                             navController.navigate("dashboard") {
                                 popUpTo("login") { inclusive = true }
@@ -152,12 +163,11 @@ fun AppNavigation() {
                 }
             )
         }
-        // ========== AUTH SCREENS ==========
+
         composable("register") {
             RegisterScreen(
                 navController = navController,
                 onRegistrationData = { email, password, fullName, phone ->
-                    // Lưu dữ liệu tạm thời
                     RegistrationData.email = email
                     RegistrationData.password = password
                     RegistrationData.fullName = fullName
@@ -168,10 +178,7 @@ fun AppNavigation() {
         }
 
         composable("role_select") {
-            RoleSelectScreen(
-                navController = navController
-                // Không cần truyền arguments nữa
-            )
+            RoleSelectScreen(navController = navController)
         }
 
         composable("forgot_password") {
@@ -197,6 +204,15 @@ fun AppNavigation() {
         }
 
         composable("appointments") {
+            AppointmentScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                userId = userId
+            )
+        }
+
+        // ✅ THÊM DESTINATION "appointment" (số ít)
+        composable("appointment") {
             AppointmentScreen(
                 navController = navController,
                 isLoggedIn = isLoggedIn,
@@ -365,7 +381,7 @@ fun AppNavigation() {
             DoctorDashboardScreen(
                 navController = navController,
                 doctorId = userId,
-                doctorName = doctorName  // ← THÊM tham số này
+                doctorName = doctorName
             )
         }
 
@@ -420,6 +436,10 @@ fun AppNavigation() {
                 doctorId = userId,
                 patientId = patientId
             )
+        }
+
+        composable("scan") {
+            ScanScreen(navController = navController)
         }
 
         // ========== ADMIN SCREENS ==========

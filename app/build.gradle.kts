@@ -66,7 +66,7 @@ dependencies {
     
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    
+
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
@@ -95,4 +95,14 @@ dependencies {
 
     // ML Kit Barcode Scanning
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
+    // Facebook Login
+    implementation("com.facebook.android:facebook-login:17.0.0")
+    implementation("com.facebook.android:facebook-android-sdk:17.0.0")
+
+    // Biometric
+    implementation("androidx.biometric:biometric:1.1.0")
 }
