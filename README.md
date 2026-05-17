@@ -82,30 +82,6 @@
 
 ---
 
-## 📂 Cấu trúc dự án (Project tree)
-app/
-├── src/main/java/com/example/medicare/
-│ ├── ui/ # Màn hình
-│ │ ├── activities/ # Activity chính
-│ │ ├── fragments/ # Fragment theo từng role
-│ │ └── adapters/ # RecyclerView, ViewPager
-│ ├── data/ # Xử lý dữ liệu
-│ │ ├── models/ # Entity class
-│ │ ├── repository/ # Repository pattern
-│ │ └── datasource/ # Local / Remote
-│ ├── viewmodel/ # ViewModel (shared)
-│ ├── utils/ # Helper, constant, extension
-│ ├── di/ # Dagger-Hilt modules
-│ └── services/ # FCM, WorkManager, Notification
-├── res/
-│ ├── layout/ # XML layouts
-│ ├── drawable/ # Icon, vector, background
-│ ├── values/ # colors, strings, themes
-│ └── navigation/ # NavGraph
-└── build.gradle (Module: app)
-
----
-
 ## 📅 Kế hoạch thực hiện (Cập nhật đến 27/05/2026)
 
 | **Thời gian** | **Nội dung** | **Người thực hiện** |
