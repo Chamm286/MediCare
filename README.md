@@ -1,100 +1,251 @@
 # 🏥 MEDICARE - Ứng dụng Đặt lịch khám bệnh trực tuyến
 
-[![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-0095D5?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Material Design](https://img.shields.io/badge/Material%20Design-757575?style=for-the-badge&logo=material-design&logoColor=white)](https://material.io/)
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android)](https://developer.android.com)
+[![Language](https://img.shields.io/badge/Language-Kotlin-0095D5?style=for-the-badge&logo=kotlin)](https://kotlinlang.org/)
+[![Backend](https://img.shields.io/badge/Backend-Firebase-FFCA28?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
+[![API](https://img.shields.io/badge/API-24%2B-brightgreen?style=for-the-badge)](https://developer.android.com/about/versions/android-7.0)
+[![Material](https://img.shields.io/badge/UI-Material%20You-757575?style=for-the-badge&logo=material-ui)](https://m3.material.io/)
 
-## 📌 Giới thiệu chung
-
-**MediCare** là nền tảng đặt lịch khám bệnh trực tuyến trên Android, được xây dựng nhằm giải quyết các vấn đề:
-
-- ⏳ Chờ đợi lâu khi đặt lịch khám truyền thống.
-- 📋 Quản lý lịch hẹn và hồ sơ bệnh án rời rạc.
-- 🔔 Thiếu thông báo nhắc lịch thông minh.
-- 💳 Không có kênh thanh toán trực tuyến minh bạch.
-
-Ứng dụng hướng đến việc số hóa quy trình khám chữa bệnh, tạo sự kết nối liền mạch giữa **bệnh nhân**, **bác sĩ** và **quản trị viên**.
+> **Giải pháp y tế số toàn diện** – Kết nối bệnh nhân, bác sĩ và phòng khám trên một nền tảng duy nhất.
 
 ---
 
-## 👥 Đối tượng sử dụng & Nghiệp vụ chi tiết
+## 📑 Mục lục
 
-### 🧑‍⚕️ Bệnh nhân (Patient)
-
-| **Nhóm chức năng** | **Mô tả nghiệp vụ** |
-|-------------------|----------------------|
-| 🔐 Xác thực & Hồ sơ | Đăng ký email/Google, xác thực OTP, cập nhật thông tin cá nhân, hồ sơ sức khỏe cơ bản. |
-| 🔍 Tìm kiếm bác sĩ | Lọc theo chuyên khoa, địa điểm, giá khám, đánh giá, năm kinh nghiệm. Xem profile chi tiết bác sĩ. |
-| 📅 Đặt lịch & Thanh toán | Chọn khung giờ trống → Nhập triệu chứng → Chọn phương thức thanh toán (VNPay/Momo) → Xác nhận. |
-| 📆 Quản lý lịch hẹn | Xem danh sách lịch đã đặt, hủy lịch (kèm chính sách hoàn tiền), chỉnh sửa thông tin. |
-| ⭐ Đánh giá | Sau khi khám xong, hệ thống mở form đánh giá sao (1–5) và nhận xét. Đánh giá hiển thị công khai. |
-| 📜 Lịch sử khám | Tra cứu toàn bộ lần khám, xem hóa đơn điện tử, tải về. |
-| 🔔 Thông báo | Nhận thông báo qua app, email, SMS trước 24h và 1h khi có lịch hẹn. |
-
-### 👨‍⚕️ Bác sĩ (Doctor)
-
-| **Nhóm chức năng** | **Mô tả nghiệp vụ** |
-|-------------------|----------------------|
-| 🗓️ Quản lý lịch làm việc | Tạo khung giờ cố định hoặc linh động, khóa/mở lịch theo ngày, tuần. |
-| ✅ Xác nhận lịch hẹn | Xem danh sách bệnh nhân đã đặt, xác nhận hoặc từ chối (có lý do). |
-| 📁 Hồ sơ bệnh nhân | Tra cứu lịch sử khám, ghi chú chuyên môn cho từng lần hẹn. |
-| 📊 Thống kê | Xem doanh thu, số lượng bệnh nhân theo ngày/tuần/tháng qua biểu đồ. |
-| 🔔 Thông báo | Nhận push notification khi có lịch hẹn mới hoặc bệnh nhân hủy. |
-
-### 🔧 Quản trị viên (Admin)
-
-| **Nhóm chức năng** | **Mô tả nghiệp vụ** |
-|-------------------|----------------------|
-| 👨‍⚕️ Quản lý bác sĩ | Phê duyệt hồ sơ, cập nhật thông tin, khóa/mở tài khoản. |
-| 👤 Quản lý người dùng | Khóa/mở tài khoản bệnh nhân vi phạm, xem lịch sử hoạt động. |
-| 📈 Báo cáo hệ thống | Tổng hợp lịch hẹn, doanh thu, đánh giá trung bình, xuất báo cáo Excel/PDF. |
-| 💬 Khiếu nại | Tiếp nhận, phân công xử lý, gửi phản hồi đến người dùng. |
-| 💰 Thanh toán | Theo dõi giao dịch, xử lý hoàn tiền tự động hoặc thủ công. |
+1. [Tổng quan đồ án](#-tổng-quan-đồ-án)
+2. [Giá trị mang lại](#-giá-trị-mang-lại)
+3. [Đối tượng sử dụng & Phân quyền](#-đối-tượng-sử-dụng--phân-quyền)
+4. [Quy trình nghiệp vụ](#-quy-trình-nghiệp-vụ)
+5. [Cấu trúc dữ liệu](#-cấu-trúc-dữ-liệu)
+6. [Công nghệ & Kiến trúc](#-công-nghệ--kiến-trúc)
+7. [Cấu trúc dự án](#-cấu-trúc-dự-án)
+8. [Kế hoạch phát triển](#-kế-hoạch-phát-triển)
+9. [Yêu cầu hệ thống](#-yêu-cầu-hệ-thống)
+10. [Thông tin đồ án](#-thông-tin-đồ-án)
 
 ---
 
-## ⚙️ Công nghệ sử dụng
+## 📌 Tổng quan đồ án
 
-| **Thành phần** | **Công nghệ** | **Mục đích** |
-|---------------|---------------|----------------|
-| Ngôn ngữ | Kotlin | Phát triển Android native |
-| IDE | Android Studio | Môi trường phát triển |
-| Local DB | Room + SharedPreferences | Lưu offline |
-| Cloud DB | Firestore | Đồng bộ dữ liệu realtime |
-| Xác thực | Firebase Auth + OAuth2 | Email/Google login |
-| Thông báo | FCM | Push notification |
-| Thanh toán | VNPay SDK, Momo API | Tích hợp cổng thanh toán |
-| Biểu đồ | MPAndroidChart | Thống kê trực quan |
-| Giao diện | Material Components | Thiết kế chuẩn Material You |
-| Tác vụ nền | WorkManager | Gửi thông báo định kỳ |
-| Bản đồ | Google Maps API | Vị trí phòng khám, chỉ đường |
+**MediCare** là một ứng dụng di động (Android) cho phép người dùng đặt lịch khám bệnh trực tuyến, thanh toán điện tử, quản lý hồ sơ sức khỏe cá nhân và tương tác với bác sĩ một cách hiệu quả.
 
----
+### 🎯 Mục tiêu đồ án
 
-## 🧱 Kiến trúc ứng dụng
+- Xây dựng hệ thống quản lý lịch khám bệnh tập trung, minh bạch.
+- Tối ưu hóa trải nghiệm người dùng với giao diện trực quan, thân thiện.
+- Tích hợp các cổng thanh toán phổ biến tại Việt Nam (VNPay, Momo).
+- Tự động hóa quy trình nhắc lịch, đánh giá và báo cáo thống kê.
 
-- **Pattern:** MVVM (Model - View - ViewModel)
-- **DI:** Dagger-Hilt
-- **Network:** Retrofit + OkHttp
-- **Async:** Coroutines + Flow
-- **Image:** Glide
+### 🔥 Bài toán giải quyết
+
+| **Vấn đề thực tế** | **Giải pháp của MediCare** |
+|---------------------|-----------------------------|
+| Đặt lịch khám thủ công, mất nhiều thời gian | Đặt lịch online 24/7, chọn khung giờ trống theo thời gian thực |
+| Hồ sơ bệnh án rời rạc, khó tra cứu | Lưu trữ tập trung trên cloud, truy xuất mọi lúc mọi nơi |
+| Không có kênh thanh toán trực tuyến | Tích hợp VNPay/Momo, hỗ trợ hoàn tiền tự động theo chính sách |
+| Quên lịch hẹn, bỏ lỡ khám | Gửi thông báo qua app, email, SMS (24h và 1h trước) |
+| Không có cơ chế đánh giá bác sĩ | Hệ thống đánh giá sao + nhận xét sau mỗi lần khám |
 
 ---
 
-## 📅 Kế hoạch thực hiện (Cập nhật đến 27/05/2026)
+## 🌟 Giá trị mang lại
 
-| **Thời gian** | **Nội dung** | **Người thực hiện** |
-|---------------|--------------|----------------------|
-| 23/02 – 01/03/2026 | Nghiên cứu sơ bộ, lập đề cương | Nguyễn Thị Bích Trâm |
-| 19/03/2026 | Nộp đề cương chi tiết | Nguyễn Thị Bích Trâm |
-| 24/03 – 31/03/2026 | Thiết kế UI/UX (Figma) + Thiết kế CSDL | Trần Viết Đạt |
-| 01/04 – 25/04/2026 | Phát triển Frontend (Android) | Trần Viết Đạt |
-| 26/04 – 10/05/2026 | Phát triển Backend (Firebase, API) | Nguyễn Thị Bích Trâm |
-| 11/05 – 20/05/2026 | Kiểm thử, sửa lỗi, viết tài liệu | Cả nhóm |
-| 21/05 – 26/05/2026 | Hoàn thiện báo cáo, đóng gói sản phẩm | Cả nhóm |
-| **27/05/2026** | **Nộp báo cáo cuối cùng** | Nguyễn Thị Bích Trâm |
-| 01/06 – 21/06/2026 | Chuẩn bị slide, demo, bảo vệ trước hội đồng | Cả nhóm |
+| **Đối tượng** | **Lợi ích nhận được** |
+|---------------|------------------------|
+| 🧑‍⚕️ **Bệnh nhân** | Tiết kiệm thời gian chờ đợi, dễ dàng so sánh và chọn bác sĩ phù hợp, theo dõi lịch sử khám bệnh. |
+| 👨‍🔬 **Bác sĩ** | Quản lý lịch làm việc khoa học, tối ưu thời gian khám, tăng thu nhập qua hệ thống đặt lịch. |
+| 🏥 **Phòng khám / Admin** | Nắm bắt doanh thu, đánh giá chất lượng dịch vụ, quản lý tập trung, giảm tải công việc hành chính. |
+
+---
+
+## 👥 Đối tượng sử dụng & Phân quyền
+
+### 🔐 Ma trận quyền hạn (RBAC)
+
+| **Chức năng** | **Bệnh nhân** | **Bác sĩ** | **Admin** |
+|---------------|:-------------:|:----------:|:----------:|
+| Đăng ký / Đăng nhập | ✅ | ✅ | ✅ |
+| Xem danh sách bác sĩ | ✅ | ❌ | ✅ |
+| Xem profile chi tiết bác sĩ | ✅ | ✅ | ✅ |
+| Đặt / Hủy lịch hẹn | ✅ | ❌ | ✅ |
+| Xác nhận lịch hẹn | ❌ | ✅ | ✅ |
+| Thanh toán trực tuyến | ✅ | ❌ | ✅ |
+| Đánh giá bác sĩ | ✅ | ❌ | ❌ |
+| Quản lý lịch làm việc | ❌ | ✅ | ✅ |
+| Xem thống kê doanh thu | ❌ | ✅ | ✅ |
+| Quản lý người dùng | ❌ | ❌ | ✅ |
+| Duyệt hồ sơ bác sĩ | ❌ | ❌ | ✅ |
+| Xử lý khiếu nại | ❌ | ❌ | ✅ |
+
+### 📋 Nghiệp vụ chi tiết từng vai trò
+
+<details>
+<summary><b>🧑‍⚕️ Bệnh nhân (7 nhóm chức năng)</b></summary>
+
+| **STT** | **Nhóm** | **Mô tả chi tiết** |
+|---------|----------|---------------------|
+| 1 | Xác thực | Đăng ký email/SĐT, xác thực OTP, đăng nhập bằng Google, quên mật khẩu |
+| 2 | Hồ sơ cá nhân | Cập nhật avatar, thông tin liên hệ, tiền sử bệnh, dị ứng thuốc |
+| 3 | Tìm kiếm bác sĩ | Lọc theo: chuyên khoa, địa chỉ, giá khám (từ cao đến thấp), đánh giá (4–5 sao), năm kinh nghiệm |
+| 4 | Đặt lịch | Chọn bác sĩ → Xem lịch rảnh (tuần) → Nhập triệu chứng → Chọn thanh toán → Xác nhận |
+| 5 | Quản lý lịch hẹn | Xem lịch sử (sắp tới/đã qua), hủy lịch (kèm hoàn tiền), chỉnh sửa triệu chứng |
+| 6 | Đánh giá | Form đánh giá tự động xuất hiện sau khi kết thúc lịch hẹn (sao + bình luận) |
+| 7 | Thông báo | Nhận push, email, SMS: xác nhận lịch, nhắc lịch, thông báo hủy lịch |
+</details>
+
+<details>
+<summary><b>👨‍⚕️ Bác sĩ (5 nhóm chức năng)</b></summary>
+
+| **STT** | **Nhóm** | **Mô tả chi tiết** |
+|---------|----------|---------------------|
+| 1 | Quản lý lịch làm việc | Tạo khung giờ (thứ - ngày - ca sáng/chiều), khóa giờ bận, cập nhật giá khám |
+| 2 | Xác nhận lịch hẹn | Danh sách bệnh nhân theo ngày, xác nhận (chuyển trạng thái confirmed) hoặc từ chối + lý do |
+| 3 | Hồ sơ bệnh nhân | Xem lịch sử khám, ghi chú chuyên môn (private note), kê đơn (tính năng mở rộng) |
+| 4 | Thống kê | Biểu đồ doanh thu theo ngày/tuần/tháng, số lượng bệnh nhân, đánh giá trung bình |
+| 5 | Thông báo | Push notification khi: có lịch mới, bệnh nhân hủy lịch, bệnh nhân gửi đánh giá |
+</details>
+
+<details>
+<summary><b>🔧 Quản trị viên (6 nhóm chức năng)</b></summary>
+
+| **STT** | **Nhóm** | **Mô tả chi tiết** |
+|---------|----------|---------------------|
+| 1 | Quản lý bác sĩ | Phê duyệt hồ sơ, chỉnh sửa thông tin, khóa/mở tài khoản, xóa bác sĩ vi phạm |
+| 2 | Quản lý bệnh nhân | Xem danh sách, khóa/mở, xem lịch sử đặt lịch và khiếu nại |
+| 3 | Quản lý thanh toán | Theo dõi giao dịch (thành công/thất bại/hoàn tiền), xuất báo cáo Excel |
+| 4 | Báo cáo hệ thống | Tổng hợp: số lịch hẹn, doanh thu (theo tuần/tháng/quý), rating trung bình |
+| 5 | Xử lý khiếu nại | Tiếp nhận, phân công, phản hồi, lưu trữ lịch sử |
+| 6 | Cấu hình hệ thống | Cập nhật chính sách hoàn tiền, phí dịch vụ, thời gian hủy lịch tối thiểu |
+</details>
+
+---
+
+## 🔄 Quy trình nghiệp vụ
+
+### 1. Quy trình đặt lịch
+[Đăng nhập] → [Chọn chuyên khoa] → [Danh sách bác sĩ] → [Xem profile]
+→ [Chọn khung giờ trống] → [Nhập triệu chứng] → [Chọn thanh toán]
+→ [Xác nhận] → [Gửi thông báo] → [Lưu vào Firestore]
+
+text
+
+### 2. Quy trình hủy lịch & hoàn tiền
+
+| **Thời điểm hủy** | **Tỷ lệ hoàn tiền** | **Xử lý tự động** |
+|-------------------|---------------------|--------------------|
+| ≥ 2 giờ trước giờ hẹn | 100% | Tự động hoàn qua VNPay/Momo |
+| < 2 giờ & > 0 giờ | 50% | Admin duyệt thủ công |
+| Sau giờ hẹn | 0% | Không hoàn |
+
+### 3. Quy trình đánh giá
+[Kết thúc lịch hẹn] → [Hệ thống gửi form đánh giá] → [Bệnh nhân chọn sao + nhập bình luận]
+→ [Lưu vào Firestore] → [Cập nhật rating trung bình của bác sĩ]
+
+---
+
+## 🗄️ Cấu trúc dữ liệu (Database Schema)
+
+### Firestore Collections
+
+| **Collection** | **Document ID** | **Key fields** |
+|----------------|----------------|----------------|
+| `users` | UID (Firebase Auth) | `role` (patient/doctor/admin), `name`, `email`, `phone`, `avatar`, `createdAt` |
+| `doctors` | doctorUID | `specialty`, `yearsOfExp`, `clinicAddress`, `price`, `ratingAvg`, `description`, `workSchedule` |
+| `appointments` | auto | `patientId`, `doctorId`, `dateTime`, `symptoms`, `status` (pending/confirmed/completed/cancelled), `paymentStatus`, `amount` |
+| `reviews` | auto | `appointmentId`, `patientId`, `doctorId`, `rating` (1-5), `comment`, `createdAt` |
+| `transactions` | auto | `appointmentId`, `method` (VNPay/Momo), `amount`, `status`, `refundStatus` |
+
+### Local Storage (Room)
+
+| **Entity** | **Purpose** |
+|------------|--------------|
+| `UserEntity` | Lưu thông tin người dùng khi offline |
+| `AppointmentCache` | Cache lịch hẹn sắp tới |
+| `DoctorCache` | Cache danh sách bác sĩ yêu thích |
+
+---
+
+## ⚙️ Công nghệ & Kiến trúc
+
+### 🧱 Kiến trúc tổng thể
+┌─────────────────────────────────────────────────────────┐
+│ Presentation Layer │
+│ Activities / Fragments / ViewModels / DataBinding │
+├─────────────────────────────────────────────────────────┤
+│ Domain Layer │
+│ Use Cases / Repository Interfaces / Models │
+├─────────────────────────────────────────────────────────┤
+│ Data Layer │
+│ Repository Implementation / Local DB / Remote API │
+└─────────────────────────────────────────────────────────┘
+
+### 🔧 Stack công nghệ chi tiết
+
+| **Category** | **Technology** | **Version** |
+|--------------|----------------|--------------|
+| Language | Kotlin | 1.9.0 |
+| Minimum SDK | API 24 (Android 7.0) | - |
+| Target SDK | API 34 (Android 14) | - |
+| UI Toolkit | Material Design 3 (Material You) | 1.11.0 |
+| Architecture | MVVM + Clean Architecture | - |
+| DI | Dagger-Hilt | 2.48 |
+| Database (Local) | Room | 2.6.1 |
+| Database (Cloud) | Firebase Firestore | 24.10.0 |
+| Authentication | Firebase Auth | 22.3.0 |
+| Push Notification | FCM | 23.4.0 |
+| Networking | Retrofit + OkHttp | 2.9.0 / 4.12.0 |
+| Async | Coroutines + Flow | 1.7.3 |
+| Image Loading | Glide | 4.16.0 |
+| Chart | MPAndroidChart | 3.1.0 |
+| Background | WorkManager | 2.9.0 |
+| Maps | Google Maps API | 18.2.0 |
+
+---
+
+## 📅 Kế hoạch phát triển
+
+### Giai đoạn phát triển (Phases)
+
+| **Phase** | **Thời gian** | **Nội dung chính** | **Người thực hiện** |
+|-----------|---------------|---------------------|----------------------|
+| **Phase 1: Nghiên cứu & Thiết kế** | 23/02 – 31/03/2026 | Lập đề cương, Figma UI/UX, thiết kế CSDL | Trâm (60%) + Đạt (40%) |
+| **Phase 2: Phát triển Frontend** | 01/04 – 25/04/2026 | Xây dựng giao diện, navigation, các màn hình chính | Trần Viết Đạt |
+| **Phase 3: Phát triển Backend** | 26/04 – 10/05/2026 | Firebase Auth, Firestore, FCM, tích hợp thanh toán | Nguyễn Thị Bích Trâm |
+| **Phase 4: Tích hợp & Kiểm thử** | 11/05 – 20/05/2026 | Test chức năng, fix bug, viết Unit test, UAT | Cả nhóm |
+| **Phase 5: Hoàn thiện** | 21/05 – 26/05/2026 | Đóng gói APK/AAB, viết tài liệu, làm slide | Cả nhóm |
+| **Phase 6: Bảo vệ** | 01/06 – 21/06/2026 | Demo trực tiếp, bảo vệ trước hội đồng | Cả nhóm |
+
+### 🗓️ Mốc thời gian quan trọng
+
+| **Mốc** | **Ngày** | **Nội dung** |
+|---------|----------|---------------|
+| Nộp đề cương | 19/03/2026 | Đã hoàn thành |
+| **Nộp báo cáo cuối cùng** | **27/05/2026** | ✅ Đã nộp |
+| Bảo vệ đồ án | 01–21/06/2026 | Đang chuẩn bị |
+
+---
+
+## 💻 Yêu cầu hệ thống
+
+### Môi trường phát triển
+
+| **Thành phần** | **Yêu cầu** |
+|----------------|--------------|
+| Hệ điều hành | Windows 10/11, macOS, hoặc Linux (Ubuntu 20.04+) |
+| RAM | Tối thiểu 8GB (khuyến nghị 16GB) |
+| Dung lượng trống | 10GB |
+| Android Studio | Hedgehog (2023.1.1) trở lên |
+| JDK | 11 hoặc 17 |
+| Gradle | 8.0+ |
+
+### Môi trường chạy (User)
+
+| **Thiết bị** | **Yêu cầu** |
+|--------------|--------------|
+| Hệ điều hành | Android 7.0 (API 24) trở lên |
+| RAM | 2GB+ |
+| Kết nối | Internet (Wi-Fi hoặc 4G/5G) |
+| Dịch vụ bắt buộc | Google Play Services (cho FCM, Maps, Auth) |
 
 ---
 
@@ -104,20 +255,37 @@
 |---------|----------------|
 | **Tên đồ án** | MEDICARE - Ứng dụng Đặt lịch khám bệnh trực tuyến |
 | **Giảng viên hướng dẫn** | ThS. Nguyễn Đỗ Công Pháp |
-| **Sinh viên 1** | Nguyễn Thị Bích Trâm - 24IT277 (0934984665) |
-| **Sinh viên 2** | Trần Viết Đạt - 24IT332 (0396704484) |
+| **Sinh viên thực hiện 1** | Nguyễn Thị Bích Trâm - 24IT277 (0934984665) |
+| **Sinh viên thực hiện 2** | Trần Viết Đạt - 24IT332 (0396704484) |
 | **Lớp** | 24SE1 - Công Nghệ Thông Tin (Kỹ Sư) |
-| **Trường** | Đại học CNTT & TT Việt – Hàn (VKU) |
-| **Khoa** | Khoa học Máy tính |
+| **Trường** | Đại học Công nghệ Thông tin và Truyền thông Việt - Hàn |
+| **Khoa** | Khoa Khoa học Máy tính |
 
 ---
 
-## 📝 Ghi chú
+## 📝 Ghi chú & Tài liệu tham khảo
 
-> Đây là đồ án kết thúc học phần, đã được nghiệm thu và đánh giá nội bộ.  
-> Mọi đóng góp và phản hồi xin vui lòng liên hệ qua email: [tramnb.24it@vku.udn.vn](mailto:tramnb.24it@vku.udn.vn)
+> ✅ **Xác nhận:** Đồ án đã được nghiệm thu nội bộ, đáp ứng đầy đủ các chức năng cốt lõi theo yêu cầu.
+
+### 📚 Tài liệu tham khảo
+
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [Material Design 3 Guidelines](https://m3.material.io/)
+- [VNPay Developer Integration](https://vnpay.vn/developer)
+- [Momo Payment API](https://developers.momo.vn/)
+
+### 📞 Liên hệ
+
+📧 Email: [tramnb.24it@vku.udn.vn](mailto:tramnb.24it@vku.udn.vn)  
+📱 Điện thoại: 0934 984 665 (Trâm) - 0396 704 484 (Đạt)
 
 ---
+
+<div align="center">
 
 **© 2026 - MediCare Team**  
 *Giải pháp y tế số cho người Việt*
+
+🔥 *Đã nộp báo cáo thành công ngày 27/05/2026* 🔥
+
+</div>
