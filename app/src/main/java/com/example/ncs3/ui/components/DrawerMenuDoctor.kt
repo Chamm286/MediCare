@@ -33,64 +33,82 @@ fun DrawerMenuDoctor(
     onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit
 ) {
+    // Định nghĩa bảng màu Medicare đồng bộ
+    val medicarePrimary = Color(0xFF00796B) // Xanh Teal chủ đạo
+    val medicareGradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFF004D40), Color(0xFF00796B))
+    )
+    val footerTextColor = Color(0xFF00796B)
+
     ModalDrawerSheet(
-        modifier = Modifier.width(300.dp),
+        modifier = Modifier.width(310.dp),
         drawerContainerColor = Color.White,
-        drawerShape = RoundedCornerShape(0.dp, 24.dp, 24.dp, 0.dp)
+        // Bo góc mềm mại ở cạnh phải của Drawer giống các App hiện đại ngày nay
+        drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header
+
+            // ================= HEADER PROFILE BÁC SĨ =================
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color(0xFF0D47A1), Color(0xFF1565C0))
-                        )
-                    )
+                    .background(brush = medicareGradient)
+                    .statusBarsPadding() // Tránh bị đè bởi thanh trạng thái hệ thống Android
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(horizontal = 24.dp, vertical = 28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Vòng tròn chứa Avatar Bác sĩ (Viền mờ sang trọng)
                     Box(
                         modifier = Modifier
-                            .size(70.dp)
-                            .clip(CircleShape)
-                            .background(Color.White),
+                            .size(76.dp)
+                            .background(Color.White.copy(alpha = 0.15f), CircleShape)
+                            .padding(4.dp)
+                            .background(Color.White, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("👨‍⚕️", fontSize = 36.sp)
+                        Text("👨‍⚕️", fontSize = 38.sp)
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
                     Text(
-                        doctorName,
+                        text = "BS. $doctorName",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
                     Text(
-                        doctorEmail,
+                        text = doctorEmail,
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = Color.White.copy(alpha = 0.75f)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Menu Items
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            // ================= DANH SÁCH MENU ITEMS =================
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp) // Khoảng cách đều giữa các mục
+            ) {
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.Dashboard,
-                    title = "Dashboard",
+                    title = "Tổng quan (Dashboard)",
                     onClick = { onClose(); onNavigateToDashboard() }
                 )
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.Person,
-                    title = "Hồ sơ của tôi",
+                    title = "Hồ sơ cá nhân",
                     onClick = { onClose(); onNavigateToProfile() }
                 )
                 DrawerMenuItemDoctor(
@@ -100,49 +118,69 @@ fun DrawerMenuDoctor(
                 )
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.ListAlt,
-                    title = "Lịch hẹn",
-                    badge = "4",
+                    title = "Quản lý lịch hẹn",
+                    badge = "4", // Số ca đang chờ xử lý
+                    badgeColor = Color(0xFFFF5252),
                     onClick = { onClose(); onNavigateToAppointments() }
                 )
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.People,
-                    title = "Bệnh nhân của tôi",
+                    title = "Danh sách bệnh nhân",
                     onClick = { onClose(); onNavigateToPatients() }
                 )
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.BarChart,
-                    title = "Thống kê",
+                    title = "Báo cáo thống kê",
                     onClick = { onClose(); onNavigateToStats() }
                 )
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                Divider(
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
+                    color = Color.LightGray.copy(alpha = 0.4f)
+                )
 
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.Settings,
-                    title = "Cài đặt",
+                    title = "Cấu hình hệ thống",
                     onClick = { onClose(); onNavigateToSettings() }
                 )
+
                 DrawerMenuItemDoctor(
                     icon = Icons.Outlined.Logout,
-                    title = "Đăng xuất",
-                    iconColor = Color(0xFFE53935),
-                    textColor = Color(0xFFE53935),
+                    title = "Đăng xuất tài khoản",
+                    iconColor = Color(0xFFFF5252), // Màu đỏ cảnh báo hiện đại
+                    textColor = Color(0xFFFF5252),
                     onClick = onLogout
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Footer
+            // ================= FOOTER THƯƠNG HIỆU =================
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(vertical = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🏥 MediCare", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFF0D47A1))
-                    Text("Phiên bản 1.0.0", fontSize = 10.sp, color = Color.Gray)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🏥 MediCare",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = footerTextColor
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Hệ thống quản lý lâm sàng chuyên nghiệp",
+                        fontSize = 10.sp,
+                        color = Color.Gray.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "Phiên bản ổn định 2026",
+                        fontSize = 9.sp,
+                        color = Color.LightGray
+                    )
                 }
             }
         }
@@ -154,15 +192,17 @@ fun DrawerMenuItemDoctor(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     badge: String? = null,
-    iconColor: Color = Color(0xFF5F6368),
-    textColor: Color = Color(0xFF202124),
+    badgeColor: Color = Color(0xFFFF5252),
+    iconColor: Color = Color(0xFF455A64), // Tăng sắc xám xanh để nhìn sang trọng hơn xám thuần cũ
+    textColor: Color = Color(0xFF263238),
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp)) // Tạo bo góc khi người dùng bấm (Ripple Effect đẹp hơn)
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
+            .padding(vertical = 12.dp, horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -171,22 +211,33 @@ fun DrawerMenuItemDoctor(
             tint = iconColor,
             modifier = Modifier.size(22.dp)
         )
-        Spacer(modifier = Modifier.width(16.dp))
+
+        Spacer(modifier = Modifier.width(14.dp))
+
         Text(
             text = title,
             fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
+            fontWeight = FontWeight.Medium, // Đổi từ Normal sang Medium để chữ nét và dễ đọc hơn
             color = textColor,
             modifier = Modifier.weight(1f)
         )
+
         if (badge != null) {
             Surface(
-                shape = CircleShape,
-                color = Color(0xFFE53935),
-                modifier = Modifier.size(20.dp)
+                shape = RoundedCornerShape(6.dp), // Dạng hình kẹo (Badge Pill) nhìn hiện đại hơn tròn xoe
+                color = badgeColor,
+                modifier = Modifier.height(18.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(badge, fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier.padding(horizontal = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = badge,
+                        fontSize = 10.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

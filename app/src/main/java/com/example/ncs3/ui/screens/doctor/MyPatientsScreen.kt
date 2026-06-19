@@ -1,15 +1,15 @@
-package com.example.ncs3.ui.screens.doctor
+﻿package com.example.ncs3.ui.screens.doctor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,20 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.ncs3.data.repository.MedicareRepository
+import com.example.ncs3.data.models.PatientInfo
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 
-data class PatientInfo(
-    val userId: String,
-    val fullName: String,
-    val email: String,
-    val phone: String,
-    val avatar: String,
-    val totalVisits: Int,
-    val lastVisit: String,
-    val medicalHistory: List<String>
-)
+// ĐÃ XÓA DẤU NGOẶC ĐƠN THỪA Ở ĐÂY
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,13 +53,9 @@ fun MyPatientsScreen(
 
     LaunchedEffect(doctorId) {
         scope.launch {
-            // Lấy tất cả lịch hẹn của bác sĩ
             val appointments = repository.getAppointmentsByDoctor(doctorId)
-
-            // Lấy danh sách patientId unique
             val patientIds = appointments.map { it.patientId }.distinct()
 
-            // Lấy thông tin chi tiết từng bệnh nhân
             val patientList = mutableListOf<PatientInfo>()
             for (patientId in patientIds) {
                 val user = repository.getUser(patientId)
@@ -73,11 +63,11 @@ fun MyPatientsScreen(
                     val patientAppointments = appointments.filter { it.patientId == patientId }
                     patientList.add(
                         PatientInfo(
-                            userId = patientId,
-                            fullName = user.fullName,
+                            id = patientId,
+                            name = user.fullName.ifEmpty { "Bệnh nhân" },
                             email = user.email,
-                            phone = user.phone,
-                            avatar = user.avatar.ifEmpty { "👤" },
+                            phone = user.phone.ifEmpty { "Chưa cập nhật" },
+                            avatar = if (user.avatar.isNotEmpty()) user.avatar else "👤",
                             totalVisits = patientAppointments.size,
                             lastVisit = patientAppointments.maxOfOrNull { it.date } ?: "Chưa có",
                             medicalHistory = user.medicalHistory
@@ -96,7 +86,7 @@ fun MyPatientsScreen(
         else -> patients
     }.filter { patient ->
         searchQuery.isEmpty() ||
-                patient.fullName.contains(searchQuery, ignoreCase = true) ||
+                patient.name.contains(searchQuery, ignoreCase = true) ||
                 patient.email.contains(searchQuery, ignoreCase = true) ||
                 patient.phone.contains(searchQuery, ignoreCase = true)
     }
@@ -107,7 +97,7 @@ fun MyPatientsScreen(
             onDismiss = { showPatientDetail = false },
             onNavigateToHistory = {
                 showPatientDetail = false
-                navController.navigate("patient_history/${selectedPatient?.userId}")
+                navController.navigate("patient_history/${selectedPatient?.id}")
             }
         )
     }
@@ -128,7 +118,7 @@ fun MyPatientsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Tìm kiếm nâng cao */ }) {
+                    IconButton(onClick = { }) {
                         Icon(Icons.Outlined.Search, null, tint = Color.White)
                     }
                 }
@@ -162,7 +152,7 @@ fun MyPatientsScreen(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.weight(1f),
-                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
+                        textStyle = TextStyle(fontSize = 14.sp),
                         decorationBox = { innerTextField ->
                             if (searchQuery.isEmpty()) {
                                 Text("Tìm theo tên, email, số điện thoại...", color = Color(0xFF9AA0A6), fontSize = 13.sp)
@@ -256,11 +246,10 @@ fun MyPatientsScreen(
                                 showPatientDetail = true
                             },
                             onMessage = {
-                                // TODO: Mở chat với bệnh nhân
-                                navController.navigate("chat/${patient.userId}")
+                                navController.navigate("chat/${patient.id}")
                             },
                             onViewHistory = {
-                                navController.navigate("patient_history/${patient.userId}")
+                                navController.navigate("patient_history/${patient.id}")
                             }
                         )
                     }
@@ -301,7 +290,6 @@ fun PatientCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar
                 Box(
                     modifier = Modifier
                         .size(55.dp)
@@ -313,15 +301,14 @@ fun PatientCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(patient.avatar, fontSize = 28.sp)
+                    Text(if (patient.avatar.isNotEmpty()) patient.avatar else "👤", fontSize = 28.sp)
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Info
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        patient.fullName,
+                        patient.name,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -344,7 +331,6 @@ fun PatientCard(
                     }
                 }
 
-                // Status badge
                 Surface(
                     shape = CircleShape,
                     color = if (patient.totalVisits > 5) Color(0xFF4CAF50).copy(alpha = 0.1f) else Color(0xFFFF9800).copy(alpha = 0.1f)
@@ -360,7 +346,6 @@ fun PatientCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -418,11 +403,11 @@ fun PatientDetailDialog(
                         .background(Color(0xFFE3F2FD)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(patient.avatar, fontSize = 28.sp)
+                    Text(if (patient.avatar.isNotEmpty()) patient.avatar else "👤", fontSize = 28.sp)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(patient.fullName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(patient.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text(patient.email, fontSize = 12.sp, color = Color(0xFF0D47A1))
                 }
             }
@@ -434,7 +419,6 @@ fun PatientDetailDialog(
                     .heightIn(max = 400.dp)
                     .verticalScroll(androidx.compose.foundation.rememberScrollState())
             ) {
-                // Thông tin liên hệ
                 InfoDetailRow(
                     icon = "📞",
                     title = "Số điện thoại",
@@ -453,7 +437,6 @@ fun PatientDetailDialog(
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Tiền sử bệnh
                 Text(
                     "📋 TIỀN SỬ BỆNH",
                     fontSize = 12.sp,

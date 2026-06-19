@@ -10,6 +10,7 @@ import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import com.example.ncs3.R
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
@@ -28,9 +29,13 @@ import java.util.Calendar
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import coil.compose.AsyncImage
+import com.example.ncs3.utils.SharedPrefs
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +46,7 @@ import com.example.ncs3.data.models.Doctor
 import com.example.ncs3.data.models.Specialty
 import com.example.ncs3.data.repository.MedicareRepository
 import com.example.ncs3.ui.components.*
+import com.example.ncs3.utils.RegistrationData.fullName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -60,6 +66,15 @@ data class QuickAction(
     val subtitle: String,
     val color: Color,
     val route: String
+)
+
+data class TipItem(
+    val icon: String,
+    val title: String,
+    val subtitle: String,
+    val description: String,
+    val benefits: List<String>,
+    val color: Color
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,166 +158,184 @@ fun DashboardScreen(
 
     val primaryColor = Color(0xFF0D47A1)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.15f),
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text("🏥", fontSize = 24.sp)
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text("MediCare", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("Khỏe để sống trọn vẹn", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor),
-                navigationIcon = {
-                    if (isLoggedIn) {
-                        IconButton(onClick = { showDrawer = !showDrawer }) {
-                            Icon(Icons.Default.Menu, null, tint = Color.White)
-                        }
-                    }
-                },
-                actions = {
-                    if (!isLoggedIn) {
-                        OutlinedButton(
-                            onClick = { navController.navigate("login") },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                            shape = RoundedCornerShape(28.dp),
-                            border = BorderStroke(1.dp, Color.White),
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            Icon(Icons.Outlined.Login, null, modifier = Modifier.size(16.dp), tint = Color.White)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Đăng nhập", fontSize = 13.sp)
-                        }
-                    } else {
+    // ─── ĐÃ SỬA: Dùng Box tổng bao trùm toàn bộ để các layer đè lên nhau chuẩn khít ───
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // Layer nền dưới cùng: Toàn bộ nội dung ứng dụng chính
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(userName, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White)
-                                    .clickable { navController.navigate("profile") },
-                                contentAlignment = Alignment.Center
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.15f),
+                                modifier = Modifier.size(44.dp)
                             ) {
-                                Text(userName.take(1).uppercase(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("🏥", fontSize = 24.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("MediCare", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Khỏe để sống trọn vẹn", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor),
+                    navigationIcon = {
+                        if (isLoggedIn) {
+                            IconButton(onClick = { showDrawer = !showDrawer }) {
+                                Icon(Icons.Default.Menu, null, tint = Color.White)
+                            }
+                        }
+                    },
+                    // Phần hiển thị tên và avatar trong DashboardScreen
+                    actions = {
+                        if (!isLoggedIn) {
+                            // ... button login
+                        } else {
+                            val avatarUrl = SharedPrefs.getUserAvatar()
+                            val fullName = SharedPrefs.getUserName()
+                            val displayName = fullName.split(" ").lastOrNull() ?: fullName  // 👈 LẤY TÊN
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(displayName, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
+                                        .clickable { navController.navigate("profile") },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (avatarUrl.isNotEmpty() && avatarUrl != "null") {
+                                        AsyncImage(
+                                            model = avatarUrl,
+                                            contentDescription = "Avatar",
+                                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                            contentScale = ContentScale.Crop,
+                                            placeholder = painterResource(R.drawable.anh1),
+                                            error = painterResource(R.drawable.anh1)
+                                        )
+                                    } else {
+                                        // 👈 LẤY CHỮ CÁI ĐẦU CỦA TÊN
+                                        val firstChar = displayName.take(1).uppercase().ifEmpty { "?" }
+                                        Text(
+                                            firstChar,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = primaryColor
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
+                )
+            },
+            bottomBar = {
+                when (userRole) {
+                    "admin" -> AdminBottomNavigation(
+                        navController = navController,
+                        currentRoute = "admin_dashboard"
+                    )
+                    "doctor" -> DoctorBottomNavigation(
+                        navController = navController,
+                        currentRoute = "doctor_dashboard"
+                    )
+                    else -> BottomNavigation(
+                        selectedRoute = "dashboard",
+                        onNavigateToDashboard = {},
+                        onNavigateToAppointments = { navController.navigate("appointments") },
+                        onNavigateToDoctors = { navController.navigate("doctors") },
+                        onNavigateToProfile = { navController.navigate("profile") },
+                        onQuickBooking = { navController.navigate("booking") },
+                        onFindDoctor = { navController.navigate("doctors") },
+                        onScanQR = { navController.navigate("scan") }
+                    )
                 }
-            )
-        },
-        bottomBar = {
-            when (userRole) {
-                "admin" -> AdminBottomNavigation(
-                    navController = navController,
-                    currentRoute = "admin_dashboard"
-                )
-                "doctor" -> DoctorBottomNavigation(
-                    navController = navController,
-                    currentRoute = "doctor_dashboard"
-                )
-                else -> BottomNavigation(
-                    selectedRoute = "dashboard",
-                    onNavigateToDashboard = {},
-                    onNavigateToAppointments = { navController.navigate("appointments") },
-                    onNavigateToDoctors = { navController.navigate("doctors") },
-                    onNavigateToProfile = { navController.navigate("profile") },
-                    onQuickBooking = { navController.navigate("booking") },
-                    onFindDoctor = { navController.navigate("doctors") },
-                    onScanQR = { navController.navigate("scan") }
-                )
             }
-        }
-    ) { paddingValues ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
-                CircularProgressIndicator(color = primaryColor)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentPadding = PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { SearchBarMedical(navController) }
-                item { QuickActionsMedical(quickActions, navController, isLoggedIn) }
-                item { BannerCarousel(banners, currentBannerIndex) }
+        ) { paddingValues ->
+            if (isLoading) {
+                Box(Modifier.fillMaxSize().padding(paddingValues), Alignment.Center) {
+                    CircularProgressIndicator(color = primaryColor)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                    item { SearchBarMedical(navController) }
+                    item { QuickActionsMedical(quickActions, navController, isLoggedIn) }
+                    item { BannerCarousel(banners, currentBannerIndex) }
 
-                if (promotions.isNotEmpty()) {
+                    if (promotions.isNotEmpty()) {
+                        item {
+                            SectionHeader("🔥 ƯU ĐÃI ĐẶC BIỆT", "Xem thêm") { }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp)
+                            ) {
+                                items(promotions) { promo -> PromoCard(promo) }
+                            }
+                        }
+                    }
+
                     item {
-                        SectionHeader("🔥 ƯU ĐÃI ĐẶC BIỆT", "Xem thêm") { }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        SectionHeader("🏥 CHUYÊN KHOA", "Xem tất cả") { navController.navigate("specialties") }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(20.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp)
+                        ) {
+                            items(specialties) { specialty -> SpecialtyCard(specialty) }
+                        }
+                    }
+
+                    item {
+                        SectionHeader("⭐ BÁC SĨ NỔI BẬT", "Xem tất cả") { navController.navigate("doctors") }
+                        Spacer(modifier = Modifier.height(12.dp))
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp)
                         ) {
-                            items(promotions) { promo -> PromoCard(promo) }
+                            items(doctors) { doctor ->
+                                DoctorCard(
+                                    doctor = doctor,
+                                    primaryColor = primaryColor,
+                                    onViewDetail = { navController.navigate("doctor_detail/${doctor.id}") },
+                                    onBooking = {
+                                        if (isLoggedIn) navController.navigate("booking/${doctor.id}")
+                                        else navController.navigate("login")
+                                    }
+                                )
+                            }
                         }
                     }
-                }
 
-                item {
-                    SectionHeader("🏥 CHUYÊN KHOA", "Xem tất cả") { navController.navigate("specialties") }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) {
-                        items(specialties) { specialty -> SpecialtyCard(specialty) }
-                    }
+                    item { HealthTipCard() }
                 }
-
-                item {
-                    SectionHeader("⭐ BÁC SĨ NỔI BẬT", "Xem tất cả") { navController.navigate("doctors") }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) {
-                        items(doctors) { doctor ->
-                            DoctorCard(
-                                doctor = doctor,
-                                primaryColor = primaryColor,
-                                onViewDetail = { navController.navigate("doctor_detail/${doctor.id}") },
-                                onBooking = {
-                                    if (isLoggedIn) navController.navigate("booking/${doctor.id}")
-                                    else navController.navigate("login")
-                                }
-                            )
-                        }
-                    }
-                }
-
-                item { HealthTipCard() }
             }
         }
-    }
 
-    if (showDrawer && isLoggedIn) {
+        // Layer nổi phía trên: Xử lý đóng mở Drawer lơ lửng mượt mà không gây xê dịch nền
         DrawerMenu(
+            isOpen = showDrawer,
             isLoggedIn = isLoggedIn,
             userRole = userRole,
             userName = userName,
-            userEmail = "user@example.com",
             onClose = { showDrawer = false },
             onNavigateToHome = { navController.navigate("dashboard"); showDrawer = false },
             onNavigateToProfile = { navController.navigate("profile"); showDrawer = false },
@@ -322,7 +355,7 @@ fun DashboardScreen(
     }
 }
 
-// ========== CÁC HÀM COMPONENT ==========
+// ========== CÁC HÀM COMPONENT PHỤ TRỢ ==========
 
 @Composable
 fun SearchBarMedical(navController: NavController) {
@@ -342,10 +375,11 @@ fun SearchBarMedical(navController: NavController) {
             currentHint = searchHints[index]
         }
     }
-    val transition = rememberInfiniteTransition()
+    val transition = rememberInfiniteTransition(label = "search")
     val alpha by transition.animateFloat(
         initialValue = 0.7f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(1500, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse)
+        animationSpec = infiniteRepeatable(animation = tween(1500, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
+        label = "searchAlpha"
     )
     Surface(
         shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp,
@@ -466,36 +500,115 @@ fun SpecialtyCard(specialty: Specialty) {
 @Composable
 fun DoctorCard(doctor: Doctor, primaryColor: Color, onViewDetail: () -> Unit, onBooking: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.width(170.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp),
+        modifier = Modifier.width(170.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // ✅ SỬA: Hiển thị ảnh thật từ Firebase
             Box(
-                modifier = Modifier.size(80.dp).clip(CircleShape).background(Brush.linearGradient(colors = listOf(primaryColor, primaryColor.copy(alpha = 0.7f))))
-                    .padding(2.dp).clip(CircleShape).background(Color.White).clickable { onViewDetail() },
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(Brush.linearGradient(colors = listOf(primaryColor, primaryColor.copy(alpha = 0.7f))))
+                    .padding(2.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .clickable { onViewDetail() },
                 contentAlignment = Alignment.Center
             ) {
-                Box(modifier = Modifier.size(70.dp).clip(CircleShape).background(Color(0xFFE3F2FD)), contentAlignment = Alignment.Center) {
-                    Text(doctor.avatar.ifEmpty { "👨‍⚕️" }, fontSize = 36.sp)
+                Box(
+                    modifier = Modifier
+                        .size(70.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFE3F2FD)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // ✅ KIỂM TRA: Nếu có imageUrl thì hiển thị ảnh, không thì hiển thị avatar
+                    if (doctor.imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = doctor.imageUrl,
+                            contentDescription = doctor.name,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.anh1),
+                            error = painterResource(R.drawable.anh1)
+                        )
+                    } else {
+                        Text(doctor.avatar.ifEmpty { "👨‍⚕️" }, fontSize = 36.sp)
+                    }
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
-            Text(doctor.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color(0xFF1A1A2E), modifier = Modifier.clickable { onViewDetail() })
-            Text(doctor.specialty, fontSize = 11.sp, color = primaryColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+
+            Text(
+                doctor.name,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = Color(0xFF1A1A2E),
+                modifier = Modifier.clickable { onViewDetail() }
+            )
+
+            Text(
+                doctor.specialty,
+                fontSize = 11.sp,
+                color = primaryColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 2.dp)
+            ) {
                 repeat(5) { index ->
-                    Icon(if (index < doctor.rating.toInt()) Icons.Filled.Star else Icons.Outlined.Star, null, modifier = Modifier.size(12.dp), tint = Color(0xFFFFB800))
+                    Icon(
+                        if (index < doctor.rating.toInt()) Icons.Filled.Star else Icons.Outlined.Star,
+                        null,
+                        modifier = Modifier.size(12.dp),
+                        tint = Color(0xFFFFB800)
+                    )
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("${doctor.rating}", fontSize = 11.sp, color = Color(0xFF9AA0A6))
             }
+
             Spacer(modifier = Modifier.height(8.dp))
-            Surface(shape = RoundedCornerShape(20.dp), color = primaryColor.copy(alpha = 0.1f), modifier = Modifier.fillMaxWidth()) {
-                Text("💰 ${doctor.price/1000}k", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = primaryColor, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = primaryColor.copy(alpha = 0.1f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "💰 ${doctor.price/1000}k",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
             }
+
             Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = onBooking, colors = ButtonDefaults.buttonColors(containerColor = primaryColor), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().height(36.dp)) {
+
+            Button(
+                onClick = onBooking,
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth().height(36.dp)
+            ) {
                 Icon(Icons.Outlined.CalendarMonth, null, modifier = Modifier.size(14.dp), tint = Color.White)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Đặt lịch", fontSize = 12.sp, color = Color.White)
@@ -526,11 +639,15 @@ fun HealthTipCard() {
     )
     var currentTipIndex by remember { mutableStateOf(0) }
     var isExpanded by remember { mutableStateOf(false) }
-    val infiniteTransition = rememberInfiniteTransition()
-    val glow by infiniteTransition.animateFloat(initialValue = 0.3f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(1500, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse))
+    val infiniteTransition = rememberInfiniteTransition(label = "glow")
+    val glow by infiniteTransition.animateFloat(
+        initialValue = 0.3f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(1500, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
+        label = "glowFloat"
+    )
     LaunchedEffect(Unit) { currentTipIndex = Calendar.getInstance().get(Calendar.DAY_OF_YEAR) % tips.size }
     val currentTip = tips[currentTipIndex]
+
     Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(8.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Box(modifier = Modifier.fillMaxWidth().background(brush = Brush.verticalGradient(colors = listOf(currentTip.color.copy(alpha = 0.08f), Color.White)))) {
@@ -560,10 +677,11 @@ fun HealthTipCard() {
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(currentTip.description, fontSize = 13.sp, color = Color(0xFF5F6368), lineHeight = 20.sp)
+
                 AnimatedVisibility(visible = isExpanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+                        HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 1.dp)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("🎯 LỢI ÍCH TIÊU BIỂU", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = currentTip.color)
                         Spacer(modifier = Modifier.height(12.dp))
@@ -586,33 +704,25 @@ fun HealthTipCard() {
                         }
                     }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(shape = RoundedCornerShape(30.dp), color = Color(0xFFF5F5F5), modifier = Modifier.weight(1f).height(48.dp).clickable {
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, """
-                                🌟 ${currentTip.title} - MediCare 🌟
-                                ${currentTip.description}
-                                📌 Lợi ích: ${currentTip.benefits.joinToString("\n")}
-                                --- 📱 MediCare - Chăm sóc sức khỏe toàn diện
-                            """.trimIndent())
+                    Surface(
+                        shape = RoundedCornerShape(30.dp), color = Color(0xFFF5F5F5),
+                        modifier = Modifier.weight(1f).height(48.dp).clickable {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, currentTip.title)
+                                putExtra(Intent.EXTRA_TEXT, "${currentTip.title} - ${currentTip.subtitle}\n\n${currentTip.description}\n\nChia sẻ từ ứng dụng MediCare.")
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Chia sẻ mẹo sức khỏe"))
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, "Chia sẻ mẹo sức khỏe"))
-                    }) {
-                        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.Share, null, modifier = Modifier.size(18.dp), tint = currentTip.color)
+                    ) {
+                        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Share, null, tint = Color(0xFF5F6368), modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Chia sẻ", fontSize = 13.sp, color = currentTip.color, fontWeight = FontWeight.Medium)
-                        }
-                    }
-                    Surface(shape = RoundedCornerShape(30.dp), color = currentTip.color, modifier = Modifier.weight(1f).height(48.dp).clickable {
-                        currentTipIndex = (currentTipIndex + 1) % tips.size; isExpanded = false
-                    }) {
-                        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.Refresh, null, modifier = Modifier.size(18.dp), tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Tip khác", fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.Medium)
+                            Text("Chia sẻ", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF5F6368))
                         }
                     }
                 }
@@ -620,23 +730,3 @@ fun HealthTipCard() {
         }
     }
 }
-
-@Composable
-fun BenefitChip(benefit: String) {
-    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFE8F5E9), modifier = Modifier) {
-        Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Text(benefit.take(2), fontSize = 12.sp)
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(benefit.drop(3), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF2E7D32))
-        }
-    }
-}
-
-data class TipItem(
-    val icon: String,
-    val title: String,
-    val subtitle: String,
-    val description: String,
-    val benefits: List<String>,
-    val color: Color
-)

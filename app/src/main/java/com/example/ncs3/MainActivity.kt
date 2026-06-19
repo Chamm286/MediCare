@@ -1,8 +1,6 @@
 ﻿package com.example.ncs3
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import com.example.ncs3.utils.SharedPrefs
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,60 +10,56 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
-import com.example.ncs3.ui.screens.admin.ManageDoctorsScreen
 import androidx.navigation.compose.composable
-import com.example.ncs3.ui.screens.doctor.DoctorDashboardScreen
-import com.example.ncs3.ui.screens.doctor.DoctorProfileScreen
-import com.example.ncs3.ui.screens.doctor.DoctorScheduleScreen
-import com.example.ncs3.ui.screens.doctor.DoctorAppointmentsScreen
-import com.example.ncs3.ui.screens.doctor.MyPatientsScreen
-import com.example.ncs3.ui.screens.doctor.PatientHistoryScreen
-import com.example.ncs3.ui.screens.doctor.DoctorStatsScreen
-import com.example.ncs3.ui.screens.doctor.ChatScreen
-import com.example.ncs3.ui.screens.doctor.DoctorDetailScreen
-import com.example.ncs3.ui.screens.doctor.DoctorScreen
 import androidx.navigation.compose.rememberNavController
-import com.example.ncs3.utils.RegistrationData
-import com.example.ncs3.ui.screens.dashboard.DashboardScreen
+import dagger.hilt.android.AndroidEntryPoint
+import com.example.ncs3.data.repository.MedicareRepository
+import com.example.ncs3.service.DataSeeder
+import com.example.ncs3.ui.screens.account.AccountScreen
+import com.example.ncs3.ui.screens.admin.AdminDashboardScreen
+import com.example.ncs3.ui.screens.admin.AdminSettingsScreen
+import com.example.ncs3.ui.screens.admin.ManageDoctorsScreen
+import com.example.ncs3.ui.screens.admin.ManagePatientsScreen
+import com.example.ncs3.ui.screens.admin.ReportsScreen
+import com.example.ncs3.ui.screens.appointment.AppointmentDetailScreen
+import com.example.ncs3.ui.screens.appointment.AppointmentScreen
+import com.example.ncs3.ui.screens.auth.ForgotPasswordScreen
 import com.example.ncs3.ui.screens.auth.LoginScreen
 import com.example.ncs3.ui.screens.auth.RegisterScreen
 import com.example.ncs3.ui.screens.auth.RoleSelectScreen
-import com.example.ncs3.ui.screens.auth.ForgotPasswordScreen
-import com.example.ncs3.ui.screens.appointment.AppointmentScreen
-import com.example.ncs3.ui.screens.appointment.AppointmentDetailScreen
-import com.example.ncs3.ui.screens.profile.ProfileScreen
 import com.example.ncs3.ui.screens.booking.BookingScreen
-import com.example.ncs3.ui.screens.specialty.SpecialtyListScreen
-import com.example.ncs3.ui.screens.specialty.SpecialtyDetailScreen
-import com.example.ncs3.ui.screens.medicine.MedicineStoreScreen
-import com.example.ncs3.ui.screens.medicine.MedicineScreen
-import com.example.ncs3.ui.screens.medicine.CheckoutScreen
-import com.example.ncs3.ui.screens.map.MapScreen
-import com.example.ncs3.ui.screens.notification.NotificationScreen
-import com.example.ncs3.ui.screens.settings.SettingsScreen
-import com.example.ncs3.ui.screens.history.HistoryScreen
-import com.example.ncs3.ui.screens.search.SearchScreen
+import com.example.ncs3.ui.screens.booking.PaymentScreen
+import com.example.ncs3.ui.screens.booking.PaymentSuccessScreen
 import com.example.ncs3.ui.screens.chatbot.AIChatbotScreen
-import com.example.ncs3.ui.screens.review.ReviewScreen
-import com.example.ncs3.ui.screens.rating.RatingScreen
-import com.example.ncs3.ui.screens.account.AccountScreen
-import com.example.ncs3.ui.screens.splash.SplashScreen
+import com.example.ncs3.ui.screens.dashboard.DashboardScreen
+import com.example.ncs3.ui.screens.doctor.*
+import com.example.ncs3.ui.screens.history.HistoryScreen
+import com.example.ncs3.ui.screens.map.MapScreen
+import com.example.ncs3.ui.screens.medicine.CheckoutScreen
+import com.example.ncs3.ui.screens.medicine.MedicineScreen
+import com.example.ncs3.ui.screens.medicine.MedicineStoreScreen
+import com.example.ncs3.ui.screens.notification.NotificationScreen
 import com.example.ncs3.ui.screens.onboarding.OnboardingScreen
-import com.example.ncs3.ui.screens.admin.AdminDashboardScreen
-import com.example.ncs3.ui.screens.admin.ManagePatientsScreen
-import com.example.ncs3.ui.screens.admin.ReportsScreen
-import com.example.ncs3.ui.screens.admin.AdminSettingsScreen
-import com.example.ncs3.ui.screens.scan.ScanScreen
-import com.example.ncs3.data.repository.MedicareRepository
-import com.example.ncs3.ui.theme.MediCareTheme
+import com.example.ncs3.ui.screens.profile.ProfileScreen
+import com.example.ncs3.ui.screens.rating.RatingScreen
+import com.example.ncs3.ui.screens.review.ReviewScreen
+import com.example.ncs3.ui.screens.search.SearchScreen
+import com.example.ncs3.ui.screens.settings.SettingsScreen
+import com.example.ncs3.ui.screens.specialty.SpecialtyDetailScreen
+import com.example.ncs3.ui.screens.specialty.SpecialtyListScreen
+import com.example.ncs3.ui.screens.splash.SplashScreen
+import com.example.ncs3.utils.RegistrationData
+import com.example.ncs3.utils.SharedPrefs
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Tạo color scheme sáng tùy chỉnh
             val lightScheme = lightColorScheme(
                 primary = Color(0xFF0D47A1),
                 secondary = Color(0xFF00BCD4),
@@ -102,11 +96,24 @@ fun AppNavigation() {
     var userRole by remember { mutableStateOf("patient") }
     var hasSeenOnboarding by remember { mutableStateOf(false) }
 
+    // Seed Data
+    val globalScope = rememberCoroutineScope()
+    LaunchedEffect(userId) {
+        globalScope.launch {
+            try {
+                val seeder = DataSeeder(FirebaseFirestore.getInstance())
+                seeder.seedAllData()
+            } catch (e: Exception) {
+                println("❌ Gặp lỗi khi chạy dữ liệu tự động: ${e.message}")
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = "splash"
     ) {
-        // Splash Screen
+        // ===================== SPLASH & ONBOARDING =====================
         composable("splash") {
             SplashScreen(
                 onTimeout = {
@@ -123,7 +130,6 @@ fun AppNavigation() {
             )
         }
 
-        // Onboarding
         composable("onboarding") {
             OnboardingScreen(
                 onGetStarted = {
@@ -135,7 +141,7 @@ fun AppNavigation() {
             )
         }
 
-        // ========== AUTH SCREENS ==========
+        // ===================== AUTH SCREENS =====================
         composable("login") {
             LoginScreen(
                 navController = navController,
@@ -185,7 +191,7 @@ fun AppNavigation() {
             ForgotPasswordScreen(navController = navController)
         }
 
-        // ========== PATIENT SCREENS ==========
+        // ===================== PATIENT SCREENS =====================
         composable("dashboard") {
             DashboardScreen(
                 navController = navController,
@@ -206,16 +212,13 @@ fun AppNavigation() {
         composable("appointments") {
             AppointmentScreen(
                 navController = navController,
-                isLoggedIn = isLoggedIn,
                 userId = userId
             )
         }
 
-        // ✅ THÊM DESTINATION "appointment" (số ít)
         composable("appointment") {
             AppointmentScreen(
                 navController = navController,
-                isLoggedIn = isLoggedIn,
                 userId = userId
             )
         }
@@ -311,7 +314,7 @@ fun AppNavigation() {
             )
         }
 
-        // ========== MEDICINE SCREENS ==========
+        // ===================== MEDICINE SCREENS =====================
         composable("medicine_store") {
             MedicineStoreScreen(
                 navController = navController,
@@ -327,17 +330,43 @@ fun AppNavigation() {
             )
         }
 
-        // ========== MAP SCREEN ==========
+        // ===================== PAYMENT SCREENS =====================
+        composable("payment") {
+            val viewModel: com.example.ncs3.ui.viewmodels.booking.BookingViewModel = hiltViewModel()
+            PaymentScreen(
+                navController = navController,
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onPaymentSuccess = {
+                    navController.navigate("payment_success")
+                }
+            )
+        }
+
+        composable("payment_success") {
+            PaymentSuccessScreen(
+                navController = navController,
+                onDone = {
+                    navController.navigate("appointment") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+
+        // ===================== MAP SCREEN =====================
         composable("map") {
             MapScreen(navController = navController)
         }
 
-        // ========== AI CHATBOT ==========
+        // ===================== AI CHATBOT =====================
         composable("ai_chatbot") {
             AIChatbotScreen(navController = navController)
         }
 
-        // ========== REVIEW & RATING ==========
+        // ===================== REVIEW & RATING =====================
         composable("review") {
             ReviewScreen(
                 navController = navController,
@@ -357,7 +386,7 @@ fun AppNavigation() {
             )
         }
 
-        // ========== CHECKOUT ==========
+        // ===================== CHECKOUT =====================
         composable("checkout") {
             CheckoutScreen(
                 navController = navController,
@@ -365,7 +394,7 @@ fun AppNavigation() {
             )
         }
 
-        // ========== DOCTOR SCREENS ==========
+        // ===================== DOCTOR SCREENS =====================
         composable("doctor_dashboard") {
             val scope = rememberCoroutineScope()
             val repository = remember { MedicareRepository() }
@@ -406,43 +435,7 @@ fun AppNavigation() {
             )
         }
 
-        composable("my_patients") {
-            MyPatientsScreen(
-                navController = navController,
-                doctorId = userId
-            )
-        }
-
-        composable("patient_history/{patientId}") { backStackEntry ->
-            val patientId = backStackEntry.arguments?.getString("patientId") ?: ""
-            PatientHistoryScreen(
-                navController = navController,
-                patientId = patientId,
-                doctorId = userId
-            )
-        }
-
-        composable("doctor_stats") {
-            DoctorStatsScreen(
-                navController = navController,
-                doctorId = userId
-            )
-        }
-
-        composable("chat/{patientId}") { backStackEntry ->
-            val patientId = backStackEntry.arguments?.getString("patientId") ?: ""
-            ChatScreen(
-                navController = navController,
-                doctorId = userId,
-                patientId = patientId
-            )
-        }
-
-        composable("scan") {
-            ScanScreen(navController = navController)
-        }
-
-        // ========== ADMIN SCREENS ==========
+        // ===================== ADMIN SCREENS =====================
         composable("admin_dashboard") {
             AdminDashboardScreen(navController = navController)
         }
@@ -461,6 +454,32 @@ fun AppNavigation() {
 
         composable("admin_settings") {
             AdminSettingsScreen(navController = navController)
+        }
+
+        // ===================== PAYMENT SCREENS =====================
+        composable("payment") {
+            val viewModel: com.example.ncs3.ui.viewmodels.booking.BookingViewModel = hiltViewModel()
+            PaymentScreen(
+                navController = navController,
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onPaymentSuccess = {
+                    navController.navigate("payment_success")
+                }
+            )
+        }
+
+        composable("payment_success") {
+            PaymentSuccessScreen(
+                navController = navController,
+                onDone = {
+                    navController.navigate("appointment") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
         }
     }
 }

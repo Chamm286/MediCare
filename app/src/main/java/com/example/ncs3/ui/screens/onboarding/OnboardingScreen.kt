@@ -1,10 +1,10 @@
 ﻿package com.example.ncs3.ui.screens.onboarding
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -30,45 +29,46 @@ import com.example.ncs3.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(onGetStarted: () -> Unit) {
     val pagerState = rememberPagerState(initialPage = 0) { 3 }
     val coroutineScope = rememberCoroutineScope()
 
-    // Tự động chuyển trang
+    // Hệ màu Medical Premium nhất quán
+    val brandPrimary = Color(0xFF0284C7)
+    val textPrimary = Color(0xFF0F172A)
+    val textSecondary = Color(0xFF475569)
+    val lightGrayBg = Color(0xFFF1F5F9)
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(5000)
-            val nextPage = (pagerState.currentPage + 1) % 3
-            pagerState.animateScrollToPage(nextPage)
+            if (!pagerState.isScrollInProgress) {
+                val nextPage = (pagerState.currentPage + 1) % 3
+                pagerState.animateScrollToPage(nextPage)
+            }
         }
     }
 
     val pages = listOf(
         OnboardingPageData(
             imageRes = R.drawable.anh2,
-            title = "Đặt lịch khám thông minh",
-            description = "Chọn bác sĩ, chọn giờ khám phù hợp - chỉ với 3 phút, không chờ đợi",
-            color = Color(0xFF0D47A1),
-            bgGradient = listOf(Color(0xFF0D47A1), Color(0xFF1565C0), Color(0xFF2196F3)),
-            accentColor = Color(0xFF64B5F6)
+            title = "Đặt Lịch Khám Thông Minh",
+            description = "Chủ động lựa chọn bác sĩ và khung giờ phù hợp. Đặt lịch nhanh chóng chỉ với vài thao tác, xóa bỏ hoàn toàn thời gian chờ đợi tại bệnh viện.",
+            tags = listOf("Tối ưu thời gian", "Đặt lịch 24/7", "Xác nhận tức thì")
         ),
         OnboardingPageData(
             imageRes = R.drawable.anh3,
-            title = "Bác sĩ chuyên khoa hàng đầu",
-            description = "Đội ngũ giáo sư, tiến sĩ, bác sĩ giàu kinh nghiệm từ các bệnh viện lớn",
-            color = Color(0xFF00BCD4),
-            bgGradient = listOf(Color(0xFF00BCD4), Color(0xFF0097A7), Color(0xFF4DD0E1)),
-            accentColor = Color(0xFF80DEEA)
+            title = "Chuyên Gia Đầu Ngành",
+            description = "Kết nối trực tiếp với đội ngũ Giáo sư, Tiến sĩ, Bác sĩ giàu kinh nghiệm đến từ các bệnh viện trung ương tuyến đầu trên cả nước.",
+            tags = listOf("Bác sĩ Chuyên khoa", "Hồ sơ minh bạch", "Tư vấn tận tâm")
         ),
         OnboardingPageData(
             imageRes = R.drawable.anh8,
-            title = "Hồ sơ sức khỏe toàn diện",
-            description = "Theo dõi lịch sử khám bệnh, đơn thuốc, kết quả xét nghiệm - mọi lúc mọi nơi",
-            color = Color(0xFF0097A7),
-            bgGradient = listOf(Color(0xFF0097A7), Color(0xFF006064), Color(0xFF4DB6AC)),
-            accentColor = Color(0xFF80CBC4)
+            title = "Quản Lý Sức Khỏe Số",
+            description = "Lưu trữ toàn bộ lịch sử khám bệnh, đơn thuốc điện tử và kết quả xét nghiệm an toàn tại một nơi. Tra cứu tiện lợi mọi lúc mọi nơi.",
+            tags = listOf("Bảo mật tuyệt đối", "Đơn thuốc số", "Cập nhật liên tục")
         )
     )
 
@@ -76,45 +76,44 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.White
     ) { paddingValues ->
-        Column(
+        // Sử dụng Box bao ngoài cùng để cố định cụm Bottom không bị đẩy xiên vẹo
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Skip button
+            // 1. TOP BAR: Nút bỏ qua cố định góc trên
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.End
+                    .statusBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    modifier = Modifier
-                        .shadow(4.dp, RoundedCornerShape(30.dp)),
-                    shape = RoundedCornerShape(30.dp),
-                    color = Color.White,
-                    tonalElevation = 0.dp
-                ) {
-                    TextButton(
-                        onClick = onGetStarted,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = pages[pagerState.currentPage].color
-                        )
-                    ) {
-                        Text(
-                            "Bỏ qua",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                        )
-                    }
+                if (pagerState.currentPage < 2) {
+                    Text(
+                        text = "Bỏ qua",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = textSecondary.copy(alpha = 0.6f),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onGetStarted() }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(36.dp))
                 }
             }
 
-            // HorizontalPager
+            // 2. MAIN CONTENT: Thân máy chứa Pager trượt giải phóng không gian trung tâm
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f) // Giới hạn chỉ chiếm tối đa 80% chiều cao thân máy
+                    .align(Alignment.TopCenter),
                 key = { it }
             ) { page ->
                 val pageData = pages[page]
@@ -123,320 +122,197 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
                 AnimatedPageContentEnhanced(
                     pageData = pageData,
                     isVisible = isCurrentPage,
-                    page = page,
-                    currentPage = pagerState.currentPage
+                    brandPrimary = brandPrimary,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary
                 )
             }
 
-            // Bottom section
-            Box(
+            // 3. BOTTOM CONTROLS: Neo chặt ở đáy màn hình, cực kỳ cân đối
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Indicator dots
+                // Chỉ báo trang (Indicator Dots)
                 Row(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 24.dp)
                 ) {
                     repeat(pagerState.pageCount) { index ->
                         val isSelected = pagerState.currentPage == index
                         val dotWidth by animateDpAsState(
-                            targetValue = if (isSelected) 28.dp else 8.dp,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessLow
-                            )
+                            targetValue = if (isSelected) 24.dp else 6.dp,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
                         )
 
                         Box(
                             modifier = Modifier
                                 .width(dotWidth)
-                                .height(8.dp)
+                                .height(6.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    if (isSelected) pages[index].color
-                                    else Color.LightGray.copy(alpha = 0.5f)
-                                )
+                                .background(if (isSelected) brandPrimary else brandPrimary.copy(alpha = 0.2f))
                         )
                     }
                 }
 
-                // Next/Get Started button
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    if (pagerState.currentPage == 2) {
-                        // ========== NÚT BẮT ĐẦU ĐÃ CHỈNH CÂN ĐỐI ==========
-                        var isHovered by remember { mutableStateOf(false) }
-                        val buttonScale by animateFloatAsState(
-                            targetValue = if (isHovered) 1.02f else 1f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessLow
-                            )
-                        )
-
-                        Button(
-                            onClick = onGetStarted,
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .height(56.dp)
-                                .scale(buttonScale),
-                            shape = RoundedCornerShape(28.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = pages[2].color
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 6.dp,
-                                pressedElevation = 12.dp
-                            )
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            ) {
-                                // Icon trái tim
-                                Text(
-                                    "❤️",
-                                    fontSize = 20.sp,
-                                    modifier = Modifier.alpha(0.9f)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                // Text chính
-                                Text(
-                                    "BẮT ĐẦU",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 2.sp
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                // Icon mũi tên
-                                Text(
-                                    "→",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                // Nút hành động chính
+                val isLastPage = pagerState.currentPage == 2
+                Button(
+                    onClick = {
+                        if (isLastPage) {
+                            onGetStarted()
+                        } else {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
                             }
                         }
-                    } else {
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth(0.5f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(26.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = pages[pagerState.currentPage].color
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 6.dp,
-                                pressedElevation = 10.dp
-                            )
-                        ) {
-                            Text(
-                                "TIẾP THEO",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.5.sp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("→", fontSize = 18.sp)
-                        }
-                    }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isLastPage) brandPrimary else lightGrayBg
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                ) {
+                    Text(
+                        text = if (isLastPage) "Bắt đầu trải nghiệm" else "Tiếp tục",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isLastPage) Color.White else brandPrimary
+                    )
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AnimatedPageContentEnhanced(
     pageData: OnboardingPageData,
     isVisible: Boolean,
-    page: Int,
-    currentPage: Int
+    brandPrimary: Color,
+    textPrimary: Color,
+    textSecondary: Color
 ) {
     val imageScale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0.85f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "imageScale"
+        targetValue = if (isVisible) 1.0f else 0.95f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
     )
-
-    val imageAlpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0.5f,
-        animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "imageAlpha"
-    )
-
-    val titleOffset by animateDpAsState(
-        targetValue = if (isVisible) 0.dp else 20.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "titleOffset"
-    )
-
-    val titleAlpha by animateFloatAsState(
+    val contentAlpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(400, easing = FastOutSlowInEasing),
-        label = "titleAlpha"
-    )
-
-    val descAlpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(500, easing = FastOutSlowInEasing),
-        label = "descAlpha"
+        animationSpec = tween(durationMillis = 350)
     )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = pageData.bgGradient.map { it.copy(alpha = 0.08f) }
-                )
-            )
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Image
+        // Khung ảnh được thiết kế lại kích thước cố định để cân bằng mắt
         Box(
             modifier = Modifier
-                .size(280.dp)
-                .shadow(
-                    elevation = 20.dp,
-                    shape = RoundedCornerShape(36.dp),
-                    clip = false,
-                    ambientColor = pageData.color,
-                    spotColor = pageData.color.copy(alpha = 0.4f)
-                )
+                .size(width = 280.dp, height = 240.dp)
                 .scale(imageScale)
-                .alpha(imageAlpha)
+                .alpha(contentAlpha),
+            contentAlignment = Alignment.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.95f)
+                    .shadow(
+                        elevation = 20.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        clip = false,
+                        ambientColor = brandPrimary.copy(alpha = 0.2f),
+                        spotColor = brandPrimary.copy(alpha = 0.3f)
+                    )
+            )
+
             Image(
                 painter = painterResource(id = pageData.imageRes),
                 contentDescription = pageData.title,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(36.dp)),
+                    .fillMaxSize(0.95f)
+                    .clip(RoundedCornerShape(24.dp)),
                 contentScale = ContentScale.Crop
             )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(36.dp))
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.1f))
-                        )
-                    )
-            )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        // Khoảng cách vàng phân tách khối ảnh và chữ
+        Spacer(modifier = Modifier.height(36.dp))
 
-        // Title
-        Text(
-            text = pageData.title,
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = pageData.color,
-            textAlign = TextAlign.Center,
+        // Khối chữ & Thẻ tính năng
+        Column(
             modifier = Modifier
-                .offset(y = titleOffset)
-                .alpha(titleAlpha)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Description
-        Surface(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .alpha(descAlpha),
-            shape = RoundedCornerShape(24.dp),
-            color = pageData.color.copy(alpha = 0.08f)
+                .fillMaxWidth()
+                .alpha(contentAlpha),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
+                text = pageData.title,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = textPrimary,
+                textAlign = TextAlign.Center,
+                lineHeight = 32.sp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
                 text = pageData.description,
-                fontSize = 15.sp,
-                color = Color.Gray,
+                fontSize = 14.sp,
+                color = textSecondary,
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
-        }
 
-        // Feature tags
-        if (page == 0) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // Dòng Tag tính năng gọn gàng, thanh thoát
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.alpha(descAlpha)
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                FeatureTag("🏥 100+ Bệnh viện", pageData.accentColor)
-                FeatureTag("⭐ 4.9 Đánh giá", pageData.accentColor)
-            }
-        } else if (page == 1) {
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.alpha(descAlpha)
-            ) {
-                FeatureTag("👨‍⚕️ 50+ Chuyên khoa", pageData.accentColor)
-                FeatureTag("🎓 200+ Bác sĩ", pageData.accentColor)
-            }
-        } else {
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.alpha(descAlpha)
-            ) {
-                FeatureTag("📋 Lịch sử khám", pageData.accentColor)
-                FeatureTag("💊 Đơn thuốc điện tử", pageData.accentColor)
+                pageData.tags.forEachIndexed { index, tag ->
+                    FeatureTag(text = tag, brandPrimary = brandPrimary)
+                    if (index < pageData.tags.size - 1) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(brandPrimary.copy(alpha = 0.3f))
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun FeatureTag(text: String, color: Color) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = color.copy(alpha = 0.12f),
-        modifier = Modifier.height(32.dp)
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 14.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = text,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = color
-            )
-        }
-    }
+fun FeatureTag(text: String, brandPrimary: Color) {
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = brandPrimary,
+        modifier = Modifier
+            .background(brandPrimary.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    )
 }
 
 @Composable
@@ -456,7 +332,5 @@ data class OnboardingPageData(
     val imageRes: Int,
     val title: String,
     val description: String,
-    val color: Color,
-    val bgGradient: List<Color>,
-    val accentColor: Color
+    val tags: List<String>
 )

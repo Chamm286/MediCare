@@ -53,23 +53,50 @@ class MedicareRepository {
         }
     }
 
+    // ✅ THÊM HÀM getUserById (alias của getUser)
+    suspend fun getUserById(uid: String): User? = getUser(uid)
+
+    // ✅ THÊM HÀM getDoctors (đã có)
     suspend fun getDoctors(): List<Doctor> {
         return try {
             val snapshot = firestore.collection("doctors").get().await()
             snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
+
+                val hospitalId = data["hospitalId"] as? String ?: ""
+                val specialtyText = data["specialty"] as? String ?: ""
+                val descriptionText = data["description"] as? String ?: ""
+
+                var realHospitalName = data["hospital"] as? String ?: ""
+                if (realHospitalName.isEmpty() && hospitalId.isNotEmpty()) {
+                    try {
+                        val hospDoc = firestore.collection("hospitals").document(hospitalId).get().await()
+                        if (hospDoc.exists()) {
+                            realHospitalName = hospDoc.getString("name") ?: ""
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MedicareRepo", "Lỗi liên kết bảng Hospital: ")
+                    }
+                }
+
+                val finalSpecialty = specialtyText.ifEmpty { descriptionText.ifEmpty { "Chuyên khoa tổng quát" } }
+
+                // ===== SỬA 1: THÊM DÒNG NÀY ĐỂ LẤY imageUrl =====
+                val imageUrl = data["imageUrl"] as? String ?: ""
+
                 Doctor(
                     id = doc.id,
                     name = data["name"] as? String ?: "",
-                    specialty = data["specialty"] as? String ?: "",
-                    hospital = data["hospital"] as? String ?: "",
+                    specialty = finalSpecialty,
+                    hospital = realHospitalName.ifEmpty { "Bệnh viện chưa cập nhật" },
                     avatar = data["avatar"] as? String ?: "👨‍⚕️",
+                    imageUrl = imageUrl,  // ===== SỬA 1: THÊM DÒNG NÀY =====
                     rating = (data["rating"] as? Number)?.toDouble() ?: 0.0,
                     reviews = (data["reviews"] as? Number)?.toInt() ?: 0,
                     experience = (data["experience"] as? Number)?.toInt() ?: 0,
                     price = (data["price"] as? Number)?.toInt() ?: 0,
                     degree = data["degree"] as? String ?: "",
-                    description = data["description"] as? String ?: "",
+                    description = descriptionText,
                     schedule = (data["schedule"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
                     timeSlots = (data["timeSlots"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
                     phone = data["phone"] as? String ?: "",
@@ -77,41 +104,38 @@ class MedicareRepository {
                 )
             }
         } catch (e: Exception) {
+            Log.e("MedicareRepo", "Lỗi getDoctors: ")
             emptyList()
         }
     }
 
-    suspend fun getDoctorById(doctorId: String): Doctor? {
+    suspend fun getDoctorById(userUid: String): Doctor? {
         return try {
-            val doc = firestore.collection("doctors").document(doctorId).get().await()
-            val data = doc.data ?: return null
-            Doctor(
-                id = doc.id,
-                name = data["name"] as? String ?: "",
-                specialty = data["specialty"] as? String ?: "",
-                hospital = data["hospital"] as? String ?: "",
-                avatar = data["avatar"] as? String ?: "👨‍⚕️",
-                rating = (data["rating"] as? Number)?.toDouble() ?: 0.0,
-                reviews = (data["reviews"] as? Number)?.toInt() ?: 0,
-                experience = (data["experience"] as? Number)?.toInt() ?: 0,
-                price = (data["price"] as? Number)?.toInt() ?: 0,
-                degree = data["degree"] as? String ?: "",
-                description = data["description"] as? String ?: "",
-                schedule = (data["schedule"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
-                timeSlots = (data["timeSlots"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
-                phone = data["phone"] as? String ?: "",
-                isVerified = data["isVerified"] as? Boolean ?: false
-            )
+            if (userUid.isBlank()) return null
+            val userDoc = firestore.collection("users").document(userUid).get().await()
+            if (!userDoc.exists()) return null
+            val doctorId = userDoc.getString("doctorId")
+            if (!doctorId.isNullOrBlank()) {
+                val doc = firestore.collection("doctors").document(doctorId).get().await()
+                if (doc.exists()) {
+                    val doctor = doc.toObject(Doctor::class.java)?.copy(id = doc.id)
+                    return doctor
+                }
+            } else {
+                Log.e("MedicareRepo", "Tài khoản user chưa được cấu hình trường 'doctorId'!")
+            }
+            null
         } catch (e: Exception) {
+            Log.e("MedicareRepo", "Lỗi: ")
             null
         }
     }
 
     suspend fun uploadDoctorImage(doctorId: String, imageUri: Uri): Result<String> {
         return try {
-            val storage = FirebaseStorage.getInstance()  // SỬA: thêm val storage =
+            val storage = FirebaseStorage.getInstance()
             val storageRef = storage.reference
-            val imageRef = storageRef.child("doctors/$doctorId.jpg")
+            val imageRef = storageRef.child("doctors/.jpg")
             imageRef.putFile(imageUri).await()
             val downloadUrl = imageRef.downloadUrl.await()
             firestore.collection("doctors").document(doctorId)
@@ -225,6 +249,16 @@ class MedicareRepository {
         }
     }
 
+    // ✅ THÊM HÀM createAppointmentFromMap (dùng cho Booking)
+    suspend fun createAppointmentFromMap(data: Map<String, Any>): Result<String> {
+        return try {
+            val docRef = firestore.collection("appointments").add(data).await()
+            Result.success(docRef.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun cancelAppointment(appointmentId: String): Result<Boolean> {
         return try {
             firestore.collection("appointments").document(appointmentId).update("status", "cancelled").await()
@@ -250,6 +284,7 @@ class MedicareRepository {
         return getAppointmentsByDoctor(doctorId).filter { it.date == today }
     }
 
+    // ===== SEED FUNCTIONS =====
     suspend fun seedPromotionsIfEmpty() {
         try {
             val snapshot = firestore.collection("promotions").get().await()
@@ -289,12 +324,10 @@ class MedicareRepository {
                 promotions.forEach { promo ->
                     firestore.collection("promotions").add(promo).await()
                 }
-                Log.d("MedicareRepo", "Đã tạo ${promotions.size} promotions trong Firestore")
-            } else {
-                Log.d("MedicareRepo", "Promotions đã tồn tại, không cần seed")
+                Log.d("MedicareRepo", "Đã tạo  promotions trong Firestore")
             }
         } catch (e: Exception) {
-            Log.e("MedicareRepo", "Lỗi khi seed promotions: ${e.message}")
+            Log.e("MedicareRepo", "Lỗi khi seed promotions: ")
         }
     }
 
@@ -440,10 +473,10 @@ class MedicareRepository {
                 specialties.forEach { specialty ->
                     firestore.collection("specialties").add(specialty).await()
                 }
-                Log.d("MedicareRepo", "✅ Đã tạo ${specialties.size} chuyên khoa")
+                Log.d("MedicareRepo", "✅ Đã tạo  chuyên khoa")
             }
         } catch (e: Exception) {
-            Log.e("MedicareRepo", "Lỗi seed specialties: ${e.message}")
+            Log.e("MedicareRepo", "Lỗi seed specialties: ")
         }
     }
 
@@ -461,10 +494,10 @@ class MedicareRepository {
                 hospitals.forEach { hospital ->
                     firestore.collection("hospitals").add(hospital).await()
                 }
-                Log.d("MedicareRepo", "✅ Đã tạo ${hospitals.size} bệnh viện")
+                Log.d("MedicareRepo", "✅ Đã tạo  bệnh viện")
             }
         } catch (e: Exception) {
-            Log.e("MedicareRepo", "Lỗi seed hospitals: ${e.message}")
+            Log.e("MedicareRepo", "Lỗi seed hospitals: ")
         }
     }
 
@@ -482,53 +515,107 @@ class MedicareRepository {
                 medicines.forEach { medicine ->
                     firestore.collection("medicines").add(medicine).await()
                 }
-                Log.d("MedicareRepo", "✅ Đã tạo ${medicines.size} thuốc")
+                Log.d("MedicareRepo", "✅ Đã tạo  thuốc")
             }
         } catch (e: Exception) {
-            Log.e("MedicareRepo", "Lỗi seed medicines: ${e.message}")
+            Log.e("MedicareRepo", "Lỗi seed medicines: ")
         }
     }
 
+    // ===== SỬA 2: THÊM imageUrl VÀO SEED DOCTORS =====
     suspend fun seedDoctorsIfEmpty() {
         try {
             val snapshot = firestore.collection("doctors").get().await()
             if (snapshot.isEmpty) {
                 val doctors = listOf(
                     mapOf(
-                        "name" to "Trần Thị Bình", "specialty" to "Nội tổng quát", "hospital" to "Bệnh viện Bạch Mai",
-                        "avatar" to "👩‍⚕️", "rating" to 4.8, "reviews" to 127, "experience" to 12, "price" to 300000,
+                        "name" to "BS Trần Thị Bình",
+                        "specialty" to "Khoa nội",
+                        "specialtyId" to "SP002",
+                        "hospital" to "BV Chợ Rẫy",
+                        "hospitalId" to "H001",
+                        "avatar" to "👩‍⚕️",
+                        "imageUrl" to "https://cdn.pixabay.com/photo/2016/11/29/13/14/attractive-1869761_1280.jpg",
+                        "rating" to 4.8,
+                        "reviews" to 127,
+                        "experience" to 12,
+                        "price" to 350000,
                         "degree" to "Tiến sĩ Y khoa - Đại học Y Hà Nội",
-                        "description" to "12 năm kinh nghiệm khám và điều trị các bệnh nội khoa.",
+                        "description" to "Bác sĩ nội khoa với 12 năm kinh nghiệm",
                         "schedule" to listOf("Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"),
                         "timeSlots" to listOf("08:00-12:00", "08:00-12:00", "14:00-17:00", "08:00-12:00", "14:00-17:00", "08:00-12:00"),
-                        "phone" to "0912345678", "isVerified" to true
+                        "phone" to "0912345678",
+                        "isVerified" to true,
+                        "isOnline" to true
                     ),
                     mapOf(
-                        "name" to "Nguyễn Văn An", "specialty" to "Tim mạch", "hospital" to "Bệnh viện Việt Đức",
-                        "avatar" to "👨‍⚕️", "rating" to 4.9, "reviews" to 234, "experience" to 15, "price" to 400000,
-                        "degree" to "Phó Giáo sư - Tiến sĩ Y khoa",
-                        "description" to "Chuyên gia đầu ngành về tim mạch với 15 năm kinh nghiệm.",
-                        "schedule" to listOf("Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6"),
-                        "timeSlots" to listOf("09:00-11:00", "14:00-16:00", "09:00-11:00", "14:00-16:00", "09:00-11:00"),
-                        "phone" to "0987654321", "isVerified" to true
+                        "name" to "BS Lê Văn Cường",
+                        "specialty" to "Nội tổng quát",
+                        "specialtyId" to "SP001",
+                        "hospital" to "PK Hoàn Mỹ",
+                        "hospitalId" to "H005",
+                        "avatar" to "👨‍⚕️",
+                        "imageUrl" to "https://cdn.pixabay.com/photo/2017/02/23/13/05/doctor-2092178_1280.jpg",
+                        "rating" to 4.7,
+                        "reviews" to 98,
+                        "experience" to 10,
+                        "price" to 400000,
+                        "degree" to "BS.CKI - Nội tổng quát",
+                        "description" to "Bác sĩ nội khoa tổng quát với 10 năm kinh nghiệm",
+                        "schedule" to listOf("Thứ 3", "Thứ 5", "Thứ 7"),
+                        "timeSlots" to listOf("07:30", "09:00", "13:30", "16:00"),
+                        "phone" to "0904567890",
+                        "isVerified" to true,
+                        "isOnline" to true
                     ),
                     mapOf(
-                        "name" to "Lê Thị Hương", "specialty" to "Nhi khoa", "hospital" to "Bệnh viện Nhi Trung ương",
-                        "avatar" to "👩‍⚕️", "rating" to 4.7, "reviews" to 89, "experience" to 8, "price" to 250000,
-                        "degree" to "Thạc sĩ Y khoa - Chuyên ngành Nhi",
-                        "description" to "8 năm kinh nghiệm khám và điều trị bệnh nhi.",
-                        "schedule" to listOf("Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"),
-                        "timeSlots" to listOf("08:00-11:00", "08:00-11:00", "14:00-16:00", "14:00-16:00", "08:00-11:00"),
-                        "phone" to "0934567890", "isVerified" to true
+                        "name" to "BS Nguyễn Thùy Linh",
+                        "specialty" to "Da liễu thẩm mỹ",
+                        "specialtyId" to "SP006",
+                        "hospital" to "BV Da liễu TP.HCM",
+                        "hospitalId" to "H006",
+                        "avatar" to "👩‍⚕️",
+                        "imageUrl" to "https://cdn.pixabay.com/photo/2020/05/31/13/38/doctor-5242517_1280.jpg",
+                        "rating" to 4.9,
+                        "reviews" to 203,
+                        "experience" to 8,
+                        "price" to 450000,
+                        "degree" to "BS.CKII - Da liễu",
+                        "description" to "Bác sĩ da liễu thẩm mỹ với 8 năm kinh nghiệm",
+                        "schedule" to listOf("Thứ 2", "Thứ 3", "Thứ 5"),
+                        "timeSlots" to listOf("08:30", "10:00", "14:30", "16:30"),
+                        "phone" to "0905678901",
+                        "isVerified" to true,
+                        "isOnline" to true
+                    ),
+                    mapOf(
+                        "name" to "BS Nguyễn Vĩnh Ngọc",
+                        "specialty" to "Cơ xương khớp",
+                        "specialtyId" to "SP007",
+                        "hospital" to "BV Chợ Rẫy",
+                        "hospitalId" to "H001",
+                        "avatar" to "👨‍⚕️",
+                        "imageUrl" to "https://cdn.pixabay.com/photo/2019/11/03/20/11/doctor-4599640_1280.jpg",
+                        "rating" to 4.8,
+                        "reviews" to 178,
+                        "experience" to 15,
+                        "price" to 380000,
+                        "degree" to "PGS.TS - Cơ xương khớp",
+                        "description" to "Chuyên gia cơ xương khớp với 15 năm kinh nghiệm",
+                        "schedule" to listOf("Thứ 2", "Thứ 4", "Thứ 6"),
+                        "timeSlots" to listOf("08:00", "10:00", "13:00", "15:00"),
+                        "phone" to "0906789012",
+                        "isVerified" to true,
+                        "isOnline" to true
                     )
                 )
                 doctors.forEach { doctor ->
                     firestore.collection("doctors").add(doctor).await()
                 }
-                Log.d("MedicareRepo", "✅ Đã tạo ${doctors.size} bác sĩ")
+                Log.d("MedicareRepo", "✅ Đã tạo ${doctors.size} bác sĩ với imageUrl")
             }
         } catch (e: Exception) {
-            Log.e("MedicareRepo", "Lỗi seed doctors: ${e.message}")
+            Log.e("MedicareRepo", "Lỗi khi seed doctors: ${e.message}")
         }
     }
 }

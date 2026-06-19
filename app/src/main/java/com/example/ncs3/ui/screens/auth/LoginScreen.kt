@@ -5,28 +5,29 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.draw.alpha
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -52,9 +53,8 @@ fun LoginScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
-    val screenWidth = configuration.screenWidthDp.dp
     val isSmallScreen = screenHeight < 700.dp
-    val isTablet = screenWidth > 600.dp
+    val scrollState = rememberScrollState()
 
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
@@ -67,23 +67,21 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
 
-    // Animation
-    val logoScale by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "logoScale"
-    )
+    val brandPrimary = Color(0xFF1E6091)
+    val brandGradient = listOf(Color(0xFF1A5276), Color(0xFF2980B9))
+    val textPrimary = Color(0xFF1E293B)
+    val textSecondary = Color(0xFF64748B)
+    val borderLight = Color(0xFFE2E8F0)
+    val bgInput = Color(0xFFF8FAFC)
+
     val fadeIn by animateFloatAsState(
         targetValue = 1f,
-        animationSpec = tween(800, easing = FastOutSlowInEasing),
+        animationSpec = tween(600, easing = EaseInOutQuart),
         label = "fadeIn"
     )
     val buttonScale by animateFloatAsState(
         targetValue = if (isLoading) 0.96f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy),
         label = "buttonScale"
     )
 
@@ -113,7 +111,44 @@ fun LoginScreen(
                     isLoading = false
                     if (task.isSuccessful) {
                         auth.currentUser?.let { user ->
-                            completePostLoginActions(user.uid, user.email ?: email, firestore, onLoginSuccess, context)
+                            // 👉 LẤY THÔNG TIN TỪ GOOGLE
+                            val displayName = account.displayName ?: ""
+                            val avatarUrl = account.photoUrl?.toString() ?: ""
+                            val email = account.email ?: ""
+
+                            // 👉 LƯU VÀO FIRESTORE
+                            val userData = hashMapOf(
+                                "email" to email,
+                                "fullName" to displayName,
+                                "avatar" to avatarUrl,
+                                "role" to "patient",
+                                "isActive" to true,
+                                "createdAt" to System.currentTimeMillis()
+                            )
+                            firestore.collection("users").document(user.uid)
+                                .set(userData)
+                                .addOnSuccessListener {
+                                    // 👉 LƯU VÀO SHAREDPREFS
+                                    SharedPrefs.saveUserName(displayName)
+                                    SharedPrefs.saveUserAvatar(avatarUrl)
+                                    SharedPrefs.saveUserEmail(email)
+                                    SharedPrefs.saveUserRole("patient")
+                                    SharedPrefs.saveUserId(user.uid)
+                                    SharedPrefs.saveLoggedIn(true)
+
+                                    Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+                                    onLoginSuccess(user.uid)
+                                }
+                                .addOnFailureListener {
+                                    // Vẫn lưu SharedPrefs nếu Firestore lỗi
+                                    SharedPrefs.saveUserName(displayName)
+                                    SharedPrefs.saveUserAvatar(avatarUrl)
+                                    SharedPrefs.saveUserEmail(email)
+                                    SharedPrefs.saveUserRole("patient")
+                                    SharedPrefs.saveUserId(user.uid)
+                                    SharedPrefs.saveLoggedIn(true)
+                                    onLoginSuccess(user.uid)
+                                }
                         }
                     } else {
                         errorMessage = "Đăng nhập Google thất bại"
@@ -164,7 +199,33 @@ fun LoginScreen(
                             SharedPrefs.saveUserPassword(password)
                             SharedPrefs.saveRememberMe(true)
                         }
-                        completePostLoginActions(user.uid, email, firestore, onLoginSuccess, context)
+                        // 👉 LẤY THÔNG TIN USER TỪ FIRESTORE
+                        firestore.collection("users").document(user.uid)
+                            .get()
+                            .addOnSuccessListener { document ->
+                                if (document.exists()) {
+                                    val fullName = document.getString("fullName") ?: ""
+                                    val avatar = document.getString("avatar") ?: ""
+                                    val role = document.getString("role") ?: "patient"
+
+                                    SharedPrefs.saveUserName(fullName)
+                                    SharedPrefs.saveUserAvatar(avatar)
+                                    SharedPrefs.saveUserRole(role)
+                                    SharedPrefs.saveUserId(user.uid)
+                                    SharedPrefs.saveLoggedIn(true)
+                                } else {
+                                    SharedPrefs.saveUserId(user.uid)
+                                    SharedPrefs.saveLoggedIn(true)
+                                }
+                                Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+                                onLoginSuccess(user.uid)
+                            }
+                            .addOnFailureListener {
+                                SharedPrefs.saveUserId(user.uid)
+                                SharedPrefs.saveLoggedIn(true)
+                                Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+                                onLoginSuccess(user.uid)
+                            }
                     }
                 } else {
                     errorMessage = "Email hoặc mật khẩu không đúng"
@@ -176,348 +237,274 @@ fun LoginScreen(
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
-            title = { Text("Lỗi đăng nhập", fontWeight = FontWeight.Bold) },
-            text = { Text(errorMessage) },
+            title = { Text("Thông báo", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = textPrimary) },
+            text = { Text(errorMessage, fontSize = 14.sp, color = textSecondary) },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false }) {
-                    Text("Đóng", color = Color(0xFF0D47A1))
+                    Text("Đóng", color = brandPrimary, fontWeight = FontWeight.Bold)
                 }
-            }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White
         )
     }
 
-    // ========== UI NÂNG CẤP ==========
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF8FAFE),
-                        Color(0xFFF0F4FA)
-                    )
-                )
-            )
-    ) {
+    Scaffold(
+        containerColor = Color(0xFFF8FAFC)
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = if (isSmallScreen) 20.dp else 32.dp)
-                .alpha(fadeIn),
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp)
+                .alpha(fadeIn)
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(if (isSmallScreen) 40.dp else 60.dp))
 
-            // Logo
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.anh1),
+                contentDescription = "Medicare Logo",
                 modifier = Modifier
-                    .size(if (isSmallScreen) 70.dp else 80.dp)
-                    .scale(logoScale)
-                    .shadow(16.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF0D47A1), Color(0xFF1565C0))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("🏥", fontSize = if (isSmallScreen) 36.sp else 42.sp)
-            }
+                    .size(if (isSmallScreen) 90.dp else 100.dp)
+                    .clip(RoundedCornerShape(24.dp)),
+                contentScale = ContentScale.Fit
+            )
 
-            Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                "Welcome Back!",
-                fontSize = if (isSmallScreen) 24.sp else 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A2C3E),
+                text = "ĐĂNG NHẬP",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                color = textPrimary,
                 letterSpacing = 0.5.sp
             )
             Text(
-                "Sign in to continue",
+                text = "MediCare",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = brandPrimary,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Text(
+                text = "Đăng nhập hệ thống quản lý y tế số thông minh",
                 fontSize = 13.sp,
-                color = Color(0xFF6B7A8A)
+                color = textSecondary,
+                modifier = Modifier.padding(top = 6.dp)
             )
 
-            Spacer(modifier = Modifier.height(if (isSmallScreen) 32.dp else 40.dp))
+            Spacer(modifier = Modifier.height(if (isSmallScreen) 30.dp else 40.dp))
 
-            // Card đăng nhập
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = { Text("Email đăng nhập", color = textSecondary.copy(alpha = 0.6f)) },
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                shape = RoundedCornerShape(14.dp),
+                leadingIcon = {
+                    Icon(Icons.Outlined.Email, null, tint = brandPrimary, modifier = Modifier.size(20.dp))
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = brandPrimary,
+                    unfocusedBorderColor = borderLight,
+                    focusedContainerColor = bgInput,
+                    unfocusedContainerColor = bgInput,
+                    cursorColor = brandPrimary
+                ),
+                singleLine = true,
+                isError = email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = { Text("Mật khẩu bảo mật", color = textSecondary.copy(alpha = 0.6f)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                leadingIcon = {
+                    Icon(Icons.Outlined.Lock, null, tint = brandPrimary, modifier = Modifier.size(20.dp))
+                },
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(
+                            imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                            contentDescription = null,
+                            tint = textSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = brandPrimary,
+                    unfocusedBorderColor = borderLight,
+                    focusedContainerColor = bgInput,
+                    unfocusedContainerColor = bgInput,
+                    cursorColor = brandPrimary
+                ),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(if (isSmallScreen) 20.dp else 24.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { rememberMe = !rememberMe }
                 ) {
-                    // Email
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email Address") },
-                        placeholder = { Text("hello@example.com") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Email,
-                                contentDescription = null,
-                                tint = Color(0xFF0D47A1),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF0D47A1),
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = Color(0xFF0D47A1)
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = { rememberMe = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = brandPrimary,
+                            uncheckedColor = Color(0xFFCBD5E1)
                         ),
-                        singleLine = true
+                        modifier = Modifier.size(28.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Password
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        placeholder = { Text("••••••••") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Lock,
-                                contentDescription = null,
-                                tint = Color(0xFF0D47A1),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { showPassword = !showPassword }) {
-                                Icon(
-                                    if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                    contentDescription = null,
-                                    tint = Color(0xFF6B7A8A),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        },
-                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF0D47A1),
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = Color(0xFF0D47A1)
-                        ),
-                        singleLine = true
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Ghi nhớ đăng nhập",
+                        fontSize = 13.sp,
+                        color = textSecondary,
+                        fontWeight = FontWeight.Medium
                     )
+                }
 
-                    // Options row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { rememberMe = !rememberMe }
-                        ) {
-                            Checkbox(
-                                checked = rememberMe,
-                                onCheckedChange = { rememberMe = it },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Color(0xFF0D47A1),
-                                    uncheckedColor = Color(0xFFBDBDBD)
-                                ),
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Remember me", fontSize = 12.sp, color = Color(0xFF546E7A))
-                        }
+                Text(
+                    text = "Quên mật khẩu?",
+                    fontSize = 13.sp,
+                    color = brandPrimary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .clickable { navController.navigate("forgot_password") }
+                        .padding(vertical = 4.dp, horizontal = 2.dp)
+                )
+            }
 
-                        TextButton(
-                            onClick = { navController.navigate("forgot_password") },
-                            modifier = Modifier.padding(0.dp)
-                        ) {
-                            Text(
-                                "Forgot Password?",
-                                fontSize = 12.sp,
-                                color = Color(0xFF0D47A1),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
+            Spacer(modifier = Modifier.height(28.dp))
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Login button
-                    Button(
-                        onClick = { performLogin() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(if (isSmallScreen) 48.dp else 52.dp)
-                            .scale(buttonScale),
-                        shape = RoundedCornerShape(26.dp),
-                        enabled = !isLoading,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0D47A1)
+            Button(
+                onClick = { performLogin() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .scale(buttonScale),
+                shape = RoundedCornerShape(14.dp),
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                contentPadding = PaddingValues()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.horizontalGradient(colors = brandGradient),
+                            shape = RoundedCornerShape(14.dp)
                         ),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp,
-                            pressedElevation = 6.dp
-                        )
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                "Sign In",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 0.5.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Divider
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Divider(
-                            modifier = Modifier.weight(1f),
-                            color = Color(0xFFE0E0E0),
-                            thickness = 1.dp
-                        )
-                        Text(
-                            "or",
-                            fontSize = 12.sp,
-                            color = Color(0xFF9AA0A6),
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
-                        Divider(
-                            modifier = Modifier.weight(1f),
-                            color = Color(0xFFE0E0E0),
-                            thickness = 1.dp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Google button
-                    OutlinedButton(
-                        onClick = { signInWithGoogle() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(if (isSmallScreen) 48.dp else 52.dp),
-                        shape = RoundedCornerShape(26.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.White
-                        )
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Text(
-                                "G",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4285F4)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                "Sign in with Google",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF5C5C5C)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Sign up link
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            "Don't have an account? ",
-                            fontSize = 13.sp,
-                            color = Color(0xFF6B7A8A)
-                        )
-                        Text(
-                            "Sign Up",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0D47A1),
-                            modifier = Modifier.clickable { navController.navigate("register") }
-                        )
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.5.dp)
+                    } else {
+                        Text(text = "ĐĂNG NHẬP", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 0.5.sp)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(0.1f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f).height(1.dp).background(borderLight))
+                Text(
+                    text = "HOẶC",
+                    fontSize = 11.sp,
+                    color = Color(0xFF94A3B8),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Box(modifier = Modifier.weight(1f).height(1.dp).background(borderLight))
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { signInWithGoogle() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, borderLight),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_google),
+                            contentDescription = "Google Icon",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(text = "Google", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = { /* Facebook Login */ },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, borderLight),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_facebook),
+                            contentDescription = "Facebook Icon",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(text = "Facebook", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Bạn chưa có tài khoản? ", fontSize = 14.sp, color = textSecondary)
+                Text(
+                    text = "Đăng ký ngay",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = brandPrimary,
+                    modifier = Modifier.clickable { navController.navigate("register") }
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
-}
-
-fun completePostLoginActions(
-    userId: String,
-    userEmail: String,
-    firestore: FirebaseFirestore,
-    onLoginSuccess: (String) -> Unit,
-    context: android.content.Context
-) {
-    SharedPrefs.saveUserEmail(userEmail)
-    SharedPrefs.saveUserId(userId)
-    SharedPrefs.saveLoggedIn(true)
-
-    firestore.collection("users").document(userId)
-        .get()
-        .addOnSuccessListener { document ->
-            if (document.exists()) {
-                val role = document.getString("role") ?: "patient"
-                SharedPrefs.saveUserRole(role)
-                Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-                onLoginSuccess(userId)
-            } else {
-                val newUser = hashMapOf(
-                    "email" to userEmail,
-                    "role" to "patient",
-                    "fullName" to "",
-                    "phone" to "",
-                    "createdAt" to System.currentTimeMillis(),
-                    "avatar" to "",
-                    "isActive" to true
-                )
-                firestore.collection("users").document(userId).set(newUser)
-                    .addOnSuccessListener {
-                        SharedPrefs.saveUserRole("patient")
-                        Toast.makeText(context, "Welcome to MediCare!", Toast.LENGTH_SHORT).show()
-                        onLoginSuccess(userId)
-                    }
-                    .addOnFailureListener {
-                        SharedPrefs.saveUserRole("patient")
-                        onLoginSuccess(userId)
-                    }
-            }
-        }
-        .addOnFailureListener {
-            SharedPrefs.saveUserRole("patient")
-            onLoginSuccess(userId)
-        }
 }
